@@ -7,12 +7,14 @@ export const prb = pr2;
 
 */
 
+//ng build --base--href https://Pascual-Domingo.github.io/OLC2PRO1/
 
 // Constantes para los tipos de 'valoresult' que reconoce nuestra gramática.
 const tIPO_VALOR = {
 	NUMERO:         'VAL_NUMERO',
 	IDENTIFICADOR:  'VAL_IDENTIFICADOR',
 	CADENA:         'VAL_CADENA',
+	BOOLEANO:		'VAL_BOOLEANO',
 }
 
 // Constantes para los tipos de 'operaciones' que soporta nuestra gramática.
@@ -51,7 +53,8 @@ const tIPO_INSTRUCCION = {
 	SWITCH:			'SWITCH',
 	SWITCH_OP:		'SWITCH_OP',
 	SWITCH_DEF:		'SWITCH_DEF',
-	ASIGNACION_SIMPLIFICADA: 'ASIGNACION_SIMPLIFICADA'
+	ASIGNACION_DECLARADA: 'ASIGNACION_DECLARADA',
+	VARIABLE: 		'VARIABLE'
 }
 
 // Constantes para los tipos de OPCION_SWITCH validas en la gramática
@@ -68,11 +71,13 @@ const tIPO_OPCION_SWITCH = {
  * @param {*} operandoDer 
  * @param {*} tipo 
  */
-function nuevaOperacion(operandoIzq, operandoDer, tipo) {
+function nuevaOperacion(operandoIzq, operandoDer, tipo, linea, columna) {
 	return {
 		operandoIzq: operandoIzq,
 		operandoDer: operandoDer,
-		tipo: tipo
+		tipo: tipo,
+		linea: linea,
+		columna: columna
 	}
 }
 
@@ -88,8 +93,8 @@ const InstruccionesAPI = {
 	 * @param {*} operandoDer 
 	 * @param {*} tipo 
 	 */
-	nuevoOperacionBinaria: function(operandoIzq, operandoDer, tipo) {
-		return nuevaOperacion(operandoIzq, operandoDer, tipo);
+	nuevoOperacionBinaria: function(operandoIzq, operandoDer, tipo, linea, columna) {
+		return nuevaOperacion(operandoIzq, operandoDer, tipo, linea, columna);
 	},
 
 	/**
@@ -97,8 +102,8 @@ const InstruccionesAPI = {
 	 * @param {*} operando 
 	 * @param {*} tipo 
 	 */
-	nuevoOperacionUnaria: function(operando, tipo) {
-		return nuevaOperacion(operando, undefined, tipo);
+	nuevoOperacionUnaria: function(operando, tipo, linea, columna) {
+		return nuevaOperacion(operando, undefined, tipo, linea, columna);
 	},
 
 	/**
@@ -106,10 +111,12 @@ const InstruccionesAPI = {
 	 * @param {*} valor 
 	 * @param {*} tipo 
 	 */
-	nuevoValor: function(valor, tipo) {
+	nuevoValor: function(valor, tipo, linea, columna) {
 		return {
 			tipo: tipo,
-			valor: valor
+			valor: valor,
+			linea: linea,
+			columna: columna
 		}
 	},
 
@@ -117,10 +124,12 @@ const InstruccionesAPI = {
 	 * Crea un objeto tipo Instrucción para la sentencia Imprimir.
 	 * @param {*} expresultionCadena 
 	 */
-	nuevoImprimir: function(expresultionCadena) {
+	nuevoImprimir: function(expresultionCadena, linea, columna) {
 		return {
 			tipo: TIPO_INSTRUCCION.IMPRIMIR,
-			expresultionCadena: expresultionCadena
+			expresion: expresultionCadena,
+			linea: linea,
+			columna: columna
 		};
 	},
 
@@ -129,11 +138,13 @@ const InstruccionesAPI = {
 	 * @param {*} expresultionLogica 
 	 * @param {*} instrucciones 
 	 */
-	nuevoMientras: function(expresultionLogica, instrucciones) {
+	nuevoMientras: function(expresultionLogica, instrucciones, linea, columna) {
 		return {
 			tipo: TIPO_INSTRUCCION.MIENTRAS,
 			expresultionLogica: expresultionLogica,
-			instrucciones: instrucciones
+			instrucciones: instrucciones,
+			linea: linea,
+			columna: columna
 		};
 	},
 
@@ -144,14 +155,25 @@ const InstruccionesAPI = {
 	 * @param {*} aumento
 	 * @param {*} decremento
 	 */
-	nuevoPara: function (variable, valorVariable, expresultionLogica, aumento, instrucciones) {
+	nuevoPara: function (variable, valorVariable, expresultionLogica, aumento, instrucciones, linea, columna) {
 		return {
 			tipo: TIPO_INSTRUCCION.PARA,
 			expresultionLogica: expresultionLogica,
 			instrucciones: instrucciones,
 			aumento: aumento,
 			variable: variable,
-			valorVariable: valorVariable
+			valorVariable: valorVariable,
+			linea: linea,
+			columna: columna
+		}
+	},
+
+
+	nuevoVariable(tipo_decla, ids){
+		return {
+			tipo:tIPO_INSTRUCCION.VARIABLE,
+			tipo_declaracion: tipo_decla,
+			lsID: ids
 		}
 	},
 
@@ -159,11 +181,14 @@ const InstruccionesAPI = {
 	 * Crea un objeto tipo Instrucción para la sentencia Declaración.
 	 * @param {*} identificador 
 	 */
-	nuevoDeclaracion: function(identificador, tipo) {
+	nuevoDeclaracion: function(identificador, tipo, linea, columna) {
 		return {
 			tipo: TIPO_INSTRUCCION.DECLARACION,
+			tipo_declaracion: undefined,
 			identificador: identificador,
-			tipo_dato: tipo
+			tipo_variable: tipo,
+			linea: linea,
+			columna: columna
 		}
 	},
 
@@ -172,11 +197,24 @@ const InstruccionesAPI = {
 	 * @param {*} identificador 
 	 * @param {*} expresultionNumerica 
 	 */
-	nuevoAsignacion: function(identificador, expresultionNumerica) {
+	nuevoAsignacion: function(identificador, expresultionNumerica, linea, columna) {
 		return {
 			tipo: TIPO_INSTRUCCION.ASIGNACION,
 			identificador: identificador,
-			expresultionNumerica: expresultionNumerica
+			expresion: expresultionNumerica,
+			linea: linea,
+			columna: columna
+		}
+	},
+	nuevoDeclaracionAsignacion: function(identificador, tipo, expresultionNumerica, linea, columna) {
+		return {
+			tipo: TIPO_INSTRUCCION.ASIGNACION_DECLARADA,
+			tipo_declaracion: undefined,
+			identificador: identificador,
+			expresion: expresultionNumerica,
+			tipo_variable: tipo,
+			linea: linea,
+			columna: columna
 		}
 	},
 
@@ -185,11 +223,13 @@ const InstruccionesAPI = {
 	 * @param {*} expresultionLogica 
 	 * @param {*} instrucciones 
 	 */
-	nuevoIf: function(expresultionLogica, instrucciones) {
+	nuevoIf: function(expresultionLogica, instrucciones, linea, columna) {
 		return {
 			tipo: TIPO_INSTRUCCION.IF,
 			expresultionLogica: expresultionLogica,
-			instrucciones: instrucciones
+			instrucciones: instrucciones,
+			linea: linea,
+			columna: columna
 		}
 	},
 
@@ -199,12 +239,14 @@ const InstruccionesAPI = {
 	 * @param {*} instruccionesIfVerdadero 
 	 * @param {*} instruccionesIfFalso 
 	 */
-	nuevoIfElse: function(expresultionLogica, instruccionesIfVerdadero, instruccionesIfFalso) {
+	nuevoIfElse: function(expresultionLogica, instruccionesIfVerdadero, instruccionesIfFalso, linea, columna) {
 		return {
 			tipo: TIPO_INSTRUCCION.IF_ELSE,
 			expresultionLogica: expresultionLogica,
 			instruccionesIfVerdadero: instruccionesIfVerdadero,
-			instruccionesIfFalso: instruccionesIfFalso
+			instruccionesIfFalso: instruccionesIfFalso,
+			linea: linea,
+			columna: columna
 		}
 	},
   
@@ -213,11 +255,13 @@ const InstruccionesAPI = {
 	 * @param {*} expresultionNumerica 
 	 * @param {*} instrucciones 
 	 */
-	nuevoSwitch: function(expresultionNumerica, casos) {
+	nuevoSwitch: function(expresultionNumerica, casos, linea, columna) {
 		return {
 			tipo: TIPO_INSTRUCCION.SWITCH,
 			expresultionNumerica: expresultionNumerica,
-			casos: casos
+			casos: casos,
+			linea: linea,
+			columna: columna
 		}
 	},
 
@@ -236,21 +280,25 @@ const InstruccionesAPI = {
 	 * @param {*} expresultionNumerica 
 	 * @param {*} instrucciones 
 	 */
-	nuevoCaso: function(expresultionNumerica, instrucciones) {
+	nuevoCaso: function(expresultionNumerica, instrucciones, linea, columna) {
 		return {
 			tipo: TIPO_OPCION_SWITCH.CASO,
 			expresultionNumerica: expresultionNumerica,
-			instrucciones: instrucciones
+			instrucciones: instrucciones,
+			linea: linea,
+			columna: columna
 		}
 	},
 	/**
 	 * Crea un objeto tipo OPCION_SWITCH para un CASO DEFECTO de la sentencia switch.
 	 * @param {*} instrucciones 
 	 */
-	nuevoCasoDef: function(instrucciones) {
+	nuevoCasoDef: function(instrucciones, linea, columna) {
 		return {
 			tipo: TIPO_OPCION_SWITCH.DEFECTO,
-			instrucciones: instrucciones
+			instrucciones: instrucciones,
+			linea: linea,
+			columna: columna
 		}
 	},
     
@@ -260,22 +308,9 @@ const InstruccionesAPI = {
 	*/
 	nuevoOperador: function(operador){
 		return operador 
-	},
- 
-	/**
-	 * Crea un objeto tipo Instrucción para la sentencia Asignacion con Operador
-	 * @param {*} identificador 
-	 * @param {*} operador 
-	 * @param {*} expresultionCadena 
-	 */
-	nuevoAsignacionSimplificada: function(identificador, operador , expresultionNumerica){
-		return{
-			tipo: TIPO_INSTRUCCION.ASIGNACION_SIMPLIFICADA,
-			operador : operador,
-			expresultionNumerica: expresultionNumerica,
-			identificador : identificador
-		} 
 	}
+ 
+	
 }
 // Exportamos nuestras constantes y nuestra API
 
