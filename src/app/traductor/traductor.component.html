@@ -1,0 +1,29 @@
+<div class="form-row">
+    <div class="col p-8">
+        <div class="p-1 mb-2 bg-info text-white">
+            <button type="button" class="btn btn-outline-warning" (click)="btnTraducir()">traducir</button>
+        </div>
+        <div class="ngx-codemirror">
+            <ngx-codemirror [options]="codeMirror_options" [(ngModel)]="txtEntrada" [disabled]="false"
+                [autoFocus]="true"></ngx-codemirror>
+        </div>
+    </div>
+    <div class="col">
+        <div class="p-1 mb-1 bg-info text-white">
+            <button type="button" class="btn btn-outline-warning" (click)="btnEjecutar()">ejecutar</button>
+        </div>
+        <ngx-codemirror [options]="codeMirror_options" [(ngModel)]="txtEjecutar" [disabled]="false" [autoFocus]="true">
+        </ngx-codemirror>
+    </div>
+</div>
+
+
+
+<div class="form-row">
+    <div class="col p-2">
+        <br>
+        <div class="p-2 mb-0 bg-dark text-white">CONSOLA</div>
+        <!-- <ngx-codemirror [options]="codeMirror_options" [(ngModel)]="txtConsola" [disabled] = "true"></ngx-codemirror> -->
+        <textarea class="form-control console" id="idConsola" rows="9" [disabled]="true"></textarea>
+    </div>
+</div>

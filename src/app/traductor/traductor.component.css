@@ -1,0 +1,12 @@
+textarea.form-control.console {
+    background-color: black;
+    color: blanchedalmond;
+    }
+
+    :host() ::ng-deep .CodeMirror{
+        height:500px
+    }
+
+    .CodeMirror{
+        height: 50px;
+    }
