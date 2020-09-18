@@ -1,11 +1,13 @@
 
-import { TIPO_OPERACION, TIPO_VALOR, TIPO_INSTRUCCION } from './instrucciones';
+import { TIPO_OPERACION, TIPO_VALOR, TIPO_INSTRUCCION, instruccionesAPI } from './instrucciones';
 import { TIPO_DATO, TS } from './tabla_simbolos';
 import { TE } from './tabla_errores';
+import { TRANSFERENCIA } from './transferencia';
 
 
 let tsGlobal: TS;
 let Terrores: TE;
+let transferir = new TRANSFERENCIA();
 let salidaConsola = "";
 let _ambito = "global";
 
@@ -14,30 +16,125 @@ function _main(AST) {
   Terrores = new TE();
   tsGlobal = new TS([], Terrores);
   salidaConsola = "";
-  primerRecorrido(AST, tsGlobal);
-  tsGlobal.print();
+  primerRecorrido(AST);
+  segundoRecorrido(AST);
+  //tsGlobal.print();
   return Terrores.print() + salidaConsola;
 }
 
-function primerRecorrido(instrucciones: any, tablaDeSimbolos) {
-  //console.log(instrucciones);
-  return listaInstruccion(instrucciones, tablaDeSimbolos);
+function primerRecorrido(instrucciones: any) { //guarda funciones
+  if (instrucciones.tipo === TIPO_INSTRUCCION.FUNCION) {
+    procesarDeclaracion(instrucciones, tsGlobal);
+  }
+  try {
+    primerRecorrido(instrucciones.izquierda);
+    primerRecorrido(instrucciones.derecha);
+  } catch (error) {
+
+  }
 
 }
 
-function listaInstruccion(instruccion, tablaDeSimbolos) {
+function segundoRecorrido(instruccion) { //recopila variables globales y ejecucion
+  if (instruccion.tipo === 'INSTRUCCIONES') {
+    listaInstruccion(instruccion.instruccion, tsGlobal, transferir);
+  }
+  try {
+    segundoRecorrido(instruccion.izquierda);
+    segundoRecorrido(instruccion.derecha);
+  } catch (error) {
+
+  }
+}
+
+function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
   for (let i = 0; i < instruccion.length; i++) {
     if (instruccion[i].tipo === TIPO_INSTRUCCION.IMPRIMIR) {
       try { imprimir(instruccion[i], tablaDeSimbolos); } catch (error) { }
     } else if (instruccion[i].tipo === TIPO_INSTRUCCION.VARIABLE) {
       try { procesarVariables(instruccion[i], tablaDeSimbolos); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.LLAMADA) {
+      try { procesarfuncion(instruccion[i], tablaDeSimbolos); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.TRANSFERIR) {
+      try { procesarTransferencia(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
     }
 
-
+    if (miTransferencia.flagContinue || miTransferencia.flagBreak || miTransferencia.flagReturn) break;
 
   }
 
 }
+
+function procesarTransferencia(instruccion, tablaDeSimbolos, miTransferencia) {
+  if (instruccion.valor === "return" && instruccion.expresion !== undefined && miTransferencia.flagFuncion) {
+    miTransferencia.expresion = procesarcadena(instruccion.expresion, tablaDeSimbolos);
+    miTransferencia.flagReturn = true;
+    /*console.log(result);
+    miTransferencia.expresion = result;
+    */
+  } else if (instruccion.valor === "return" && instruccion.expresion === undefined && miTransferencia.flagFuncion) {
+    console.log('funcion sin retorno');
+    miTransferencia.flagReturn = true;
+  } else {
+    let msj = '';
+    if (!miTransferencia.flagFuncion) msj = 'una funcion'; else
+      if (!miTransferencia.flagCiclo) msj = 'un ciclo'; else
+        if (!miTransferencia.flagSwitch) msj = 'un switch-case';
+    Terrores.add("semantico", ' la sentencia ' + instruccion.valor + ' debe estar dentro de ' + msj, instruccion.linea, instruccion.columna);
+  }
+}
+
+function procesarfuncion(instruccion, tablaDeSimbolos) {
+  _ambito = "local";
+  const mifuncion = tablaDeSimbolos.obtener(instruccion.identificador, instruccion.linea, instruccion.columna);
+  const tsFun = new TS(copiar(tablaDeSimbolos.simbolos), Terrores);
+  const transferenciaFuncion = new TRANSFERENCIA();
+  let flag: boolean = false;
+  if (instruccion.parametro === undefined && mifuncion.parametro === undefined) {
+    flag = true;
+  } else if (instruccion.parametro !== undefined && mifuncion.parametro !== undefined) {
+    if (instruccion.parametro.length === mifuncion.parametro.length) {
+      procesarParametro(mifuncion.parametro, instruccion.parametro, tsFun);
+      flag = true;
+    } else {
+      Terrores.add("semantico", ' parametro fuera de rango en la funcion ' + mifuncion.id + '() ', mifuncion.linea, mifuncion.columna);
+    }
+  } else {
+    Terrores.add("semantico", ' parametro fuera de rango en la funcion ' + mifuncion.id + '() ', mifuncion.linea, mifuncion.columna);
+  }
+
+  if (flag) {
+    transferenciaFuncion.flagFuncion = true;
+    listaInstruccion(mifuncion.valor, tsFun, transferenciaFuncion);
+    console.log(transferenciaFuncion.expresion);
+    if (mifuncion.tipo === transferenciaFuncion.expresion.tipo) return transferenciaFuncion.expresion;
+    if (mifuncion.tipo === TIPO_DATO.VOID && transferenciaFuncion.expresion !== undefined) {
+      Terrores.add("semantico", ' funcion no retornable ' + mifuncion.id + '() ', mifuncion.linea, mifuncion.columna);
+    } else if (mifuncion.tipo === undefined) {
+      return transferenciaFuncion.expresion;
+    } else {
+      Terrores.add("semantico", ' funcion no retornable ' + mifuncion.id + '() ', mifuncion.linea, mifuncion.columna);
+    }
+  }
+}
+
+
+function procesarParametro(parametro, llamada, tablaDeSimbolos) {
+  for (let i = 0; i < parametro.length; i++) {
+    /* crea objeto tipo variable */
+    const result = instruccionesAPI.nuevoDeclaracionAsignacion(
+      parametro[i].identificador,
+      parametro[i].tipo,
+      llamada[i],
+      parametro[i].linea,
+      parametro[i].columna
+    );
+    result.tipo_declaracion = "let";
+    procesar_asiganacionDeclarado(result, tablaDeSimbolos)
+  }
+
+}
+
 
 function procesarAsignacion(instruccion, tablaDeSimbolos) {
   const valor = procesarcadena(instruccion.expresion, tablaDeSimbolos); //aqui quiero que retorne: tipo y valor
@@ -49,11 +146,11 @@ function procesarDeclaracion(instruccion, tablaDeSimbolos) { //aqui cambiamos pa
     instruccion.tipo_declaracion,
     instruccion.identificador,
     instruccion.tipo_variable,
-    undefined,
+    instruccion.valor,
     _ambito,
     instruccion.linea,
     instruccion.columna,
-    undefined
+    instruccion.parametro
   );
 
 
@@ -67,13 +164,12 @@ function procesar_asiganacionDeclarado(instruccion, tablaDeSimbolos) {
 function procesarVariables(variables, tablaDeSimbolos) {
   (variables.lsID).forEach(element => {
     element.tipo_declaracion = variables.tipo_declaracion;
-    console.log(element);
     try {
       if (element.tipo === TIPO_INSTRUCCION.DECLARACION) {
         procesarDeclaracion(element, tablaDeSimbolos);
       } else if (element.tipo === TIPO_INSTRUCCION.ASIGNACION_DECLARADA) {
         procesar_asiganacionDeclarado(element, tablaDeSimbolos);
-      }else if(element.tipo === TIPO_INSTRUCCION.ASIGNACION){
+      } else if (element.tipo === TIPO_INSTRUCCION.ASIGNACION) {
         procesarAsignacion(element, tablaDeSimbolos);
       }
     } catch (error) {
@@ -131,19 +227,25 @@ function expLogica(expresion, tablaDeSimbolos) {
     // En este caso necesitamos procesar los operandos para &&.
     const valorIzq = exprRelacional(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
     const valorDer = exprRelacional(expresion.operandoDer, tablaDeSimbolos);      // resolvemos el operando derecho.
-    return valorIzq && valorDer;
+    if (typeof valorIzq === 'boolean' && typeof valorDer === 'boolean') return valorIzq && valorDer;
+    Terrores.add("semantico", 'se esperaban expresiones booleanas para ejecutar la: ' + expresion.tipo, expresion.linea, expresion.columna);
+    return;
   }
   if (expresion.tipo === TIPO_OPERACION.OR) {
     // En este caso necesitamos procesar los operandos para ||.
     const valorIzq = exprRelacional(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
     const valorDer = exprRelacional(expresion.operandoDer, tablaDeSimbolos);      // resolvemos el operando derecho.
-    return valorIzq || valorDer;
+    if (typeof valorIzq === 'boolean' && typeof valorDer === 'boolean') return valorIzq || valorDer;
+    Terrores.add("semantico", 'se esperaban expresiones booleanas para ejecutar la: ' + expresion.tipo, expresion.linea, expresion.columna);
+    return;
   }
   if (expresion.tipo === TIPO_OPERACION.NOT) {
     console.log(expresion);
     // En este caso necesitamos procesar solamente un operando para !.
     const valor = expLogica(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
-    return !valor;
+    if (typeof valor === 'boolean') return !valor;
+    Terrores.add("semantico", 'se esperaban expresiones booleanas para ejecutar la: ' + expresion.tipo, expresion.linea, expresion.columna);
+    return;
   }
   return exprRelacional(expresion, tablaDeSimbolos);
 }
@@ -153,9 +255,7 @@ function exprRelacional(expresion, tablaDeSimbolos) {
   if (expresion.tipo === TIPO_OPERACION.MAYOR_QUE ||
     expresion.tipo === TIPO_OPERACION.MENOR_QUE ||
     expresion.tipo === TIPO_OPERACION.MAYOR_IGUAL ||
-    expresion.tipo === TIPO_OPERACION.MENOR_IGUAL ||
-    expresion.tipo === TIPO_OPERACION.DOBLE_IGUAL ||
-    expresion.tipo === TIPO_OPERACION.NO_IGUAL) {
+    expresion.tipo === TIPO_OPERACION.MENOR_IGUAL) {
     // En este caso necesitamos procesar los operandos antes de realizar la comparación.
     let valorIzq = expAritmetica(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
     let valorDer = expAritmetica(expresion.operandoDer, tablaDeSimbolos);      // resolvemos el operando derecho.
@@ -170,9 +270,14 @@ function exprRelacional(expresion, tablaDeSimbolos) {
     if (expresion.tipo === TIPO_OPERACION.MENOR_QUE) return valorIzq < valorDer;
     if (expresion.tipo === TIPO_OPERACION.MAYOR_IGUAL) return valorIzq >= valorDer;
     if (expresion.tipo === TIPO_OPERACION.MENOR_IGUAL) return valorIzq <= valorDer;
+
+
+  } else if (expresion.tipo === TIPO_OPERACION.DOBLE_IGUAL ||
+    expresion.tipo === TIPO_OPERACION.NO_IGUAL) {
+    let valorIzq = expAritmetica(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
+    let valorDer = expAritmetica(expresion.operandoDer, tablaDeSimbolos);      // resolvemos el operando derecho.
     if (expresion.tipo === TIPO_OPERACION.DOBLE_IGUAL) return valorIzq === valorDer;
     if (expresion.tipo === TIPO_OPERACION.NO_IGUAL) return valorIzq !== valorDer;
-
   }
 
   return expAritmetica(expresion, tablaDeSimbolos);
@@ -182,7 +287,9 @@ function exprRelacional(expresion, tablaDeSimbolos) {
 
 
 function expAritmetica(expresultion: any, tablaDeSimbolos) {
-  
+  if (expresultion.tipo === TIPO_INSTRUCCION.LLAMADA) {
+    return procesarfuncion(expresultion, tablaDeSimbolos);
+  }
   if (expresultion.tipo === TIPO_OPERACION.NEGATIVO) {
     // Es un valor negado.
     // En este caso necesitamos procesar el valor del operando para poder negar su valor.
@@ -262,7 +369,7 @@ function expAritmetica(expresultion: any, tablaDeSimbolos) {
         }
         return { valor: false, tipo: TIPO_DATO.BOOLEANO }
       }
-     
+
       return { valor: sym.valor, tipo: sym.tipo };
 
     } else if (expresultion.tipo === TIPO_VALOR.BOOLEANO) {
@@ -272,9 +379,17 @@ function expAritmetica(expresultion: any, tablaDeSimbolos) {
       return { valor: false, tipo: TIPO_DATO.BOOLEANO }
     }
     else {
-      console.log(expresultion);
       Terrores.add("semantico", 'expresion no valida ' + expresultion.tipo + ': ' + expresultion.valor, expresultion.linea, expresultion.columna);
     }
+}
+
+function copiar(simbolos) {
+  let copia = [];
+  simbolos.forEach(element => {
+    copia.push(element);
+  });
+
+  return copia;
 }
 
 export const ejecutar = _main;

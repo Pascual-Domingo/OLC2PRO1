@@ -7,6 +7,8 @@ export const prb = pr2;
 
 */
 
+import { identifierModuleUrl } from '@angular/compiler';
+
 //ng build --base--href https://Pascual-Domingo.github.io/OLC2PRO1/
 
 // Constantes para los tipos de 'valoresult' que reconoce nuestra gramática.
@@ -38,7 +40,8 @@ const tIPO_OPERACION = {
 	OR: 			'OP_OR',
 	NOT:   			'OP_NOT',  	
 
-	CONCATENACION:  'OP_CONCATENACION'
+	CONCATENACION:  'OP_CONCATENACION',
+	TRANSFERIR:		'TRANSFERIR',
 };
 
 // Constantes para los tipos de 'instrucciones' válidas en nuestra gramática.
@@ -54,7 +57,11 @@ const tIPO_INSTRUCCION = {
 	SWITCH_OP:		'SWITCH_OP',
 	SWITCH_DEF:		'SWITCH_DEF',
 	ASIGNACION_DECLARADA: 'ASIGNACION_DECLARADA',
-	VARIABLE: 		'VARIABLE'
+	VARIABLE: 		'VARIABLE',
+	FUNCION: 		'FUNCION',
+	CUERPO:			'CUERPO',
+	LLAMADA:		'LLAMADA',
+	TRANSFERIR:		'TRANSFERIR',
 }
 
 // Constantes para los tipos de OPCION_SWITCH validas en la gramática
@@ -308,7 +315,58 @@ const InstruccionesAPI = {
 	*/
 	nuevoOperador: function(operador){
 		return operador 
+	},
+
+	nuevoParametro(id, tipo, linea, columna){
+		return {
+			identificador: id,
+			tipo: tipo,
+			linea: linea,
+			columna:columna
+		}
+	},
+
+	nuevoFuncion(funcion, id, parametro, tipo, instruccion, linea, columna){
+		return {
+			tipo: tIPO_INSTRUCCION.FUNCION,
+			tipo_declaracion: funcion,
+			identificador: id,
+			parametro: parametro,
+			tipo_variable: tipo,
+			valor: instruccion,
+			linea: linea,
+			columna: columna
+		}
+	},
+
+	nuevoLlamada(identificador, parametro, linea, columna){
+		return {
+			tipo: tIPO_INSTRUCCION.LLAMADA,
+			identificador: identificador,
+			parametro: parametro,
+			linea: linea,
+			columna: columna
+		}
+	},
+
+	nuevoCuerpo(opIz, opDer){
+		return{
+			tipo: tIPO_INSTRUCCION.CUERPO,
+			izquierda: opIz,
+			derecha: opDer
+		}
+	},
+
+	nuevoTransferencia(val, exp, linea, columna){
+		return{
+			tipo: tIPO_INSTRUCCION.TRANSFERIR,
+			valor: val,
+			expresion: exp,
+			linea: linea,
+			columna: columna
+		}
 	}
+
  
 	
 }

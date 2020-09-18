@@ -5,7 +5,8 @@ const tIPO_DATO = {
     NUMERO: 'NUMERO',
     STRING: 'STRING',
     BOOLEANO: 'BOOLEAN',
-    IDENTIFICADOR: 'IDENTIFICADOR'
+    IDENTIFICADOR: 'IDENTIFICADOR',
+    VOID:           'VOID'
 
 }
 
@@ -17,6 +18,8 @@ const tIPO_DATO = {
  * @param {*} valor 
  */
 function crearSimbolo(tipo_decla, id, tipo, valor, ambito, linea, columna, parametro) {
+  // if(tipo !== undefined) tipo = tipo.valor;  //si existe tipo de dato
+   
     return {
         tipo_declaracion: tipo_decla,
         id: id,
@@ -29,6 +32,17 @@ function crearSimbolo(tipo_decla, id, tipo, valor, ambito, linea, columna, param
     }
 }
 
+function idenRepetidos(variables, id){
+    let flag = false;
+    for (let index = 0; index < variables.length; index++) {
+        if(id === variables[index].id){
+            flag = true;
+            break;
+        }
+        
+    }
+    return flag;
+}
 
 /**
  * Clase que representa una Tabla de Símbolos.
@@ -55,9 +69,14 @@ class TS {
      * @param {*} tipo 
      */
     agregar(tipo_decla, id, tipo, valor, ambito, linea, columna, parametro) {
-        const nuevoSimbolo = crearSimbolo(tipo_decla, id, tipo, valor, ambito, linea, columna, parametro);
+        if(!idenRepetidos(this._nuevoSimbolo, id)){
+            const nuevoSimbolo = crearSimbolo(tipo_decla, id, tipo, valor, ambito, linea, columna, parametro);
         this._simbolos.push(nuevoSimbolo);
         this._nuevoSimbolo.push(nuevoSimbolo);
+        }else{
+            this.Terrores.add("semantico", 'la variable -- '+id+' -- ya exixte', linea, columna);
+        }
+        
     }
 
     /**

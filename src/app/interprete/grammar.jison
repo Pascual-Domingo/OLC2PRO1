@@ -18,8 +18,8 @@
 number [0-9]+  				//enteros
 decimal [0-9]+("."[0-9]+) 	//decimal
 cadena1 \"[^\"]*\"			//cadena
-cadena2 \'[^\"]*\'			//cadena
-cadena3 \`[^\"]*\`			//caden
+cadena2 \'[^\']*\'			//cadena
+cadena3 \`[^\`]*\`			//caden
 identificador ([a-zA-Z])[a-zA-Z0-9_]*	 
 booleano "true" | "false"
 
@@ -56,6 +56,11 @@ tConst			"const"
 tString			"string"
 tNumber			"number"
 tBoolean		"boolean"
+tFunction		"function"
+tVoid			"void"
+tContinue		"continue"
+tBreak			"break"
+tReturn			"return"
 
 
 %x INITIAL
@@ -92,6 +97,12 @@ tBoolean		"boolean"
 <INITIAL>{timprimir}		%{ return 'timprimir'; %}
 <INITIAL>{tLet}				%{ return 'tLet'; %}
 <INITIAL>{tConst}			%{ return 'tConst'; %}
+<INITIAL>{tFunction}		%{ return 'tFunction'; %}
+<INITIAL>{tVoid}			%{ return 'tVoid'; %}
+<INITIAL>{tReturn}			%{ return 'tReturn'; %}
+<INITIAL>{tContinue}		%{ return 'tContinue'; %}
+<INITIAL>{tBreak}			%{ return 'tBreak'; %}
+
 
 <INITIAL>{booleano}			%{ return 'booleano'; %}
 <INITIAL>{decimal}			%{ return 'decimal'; %}
@@ -129,19 +140,69 @@ tBoolean		"boolean"
 
 %%
 
-Init: LINSTRUCCIONES EOF { return $1; };
+Init: CUERPO EOF { return $1; };
 
-LINSTRUCCIONES
-	: LINSTRUCCIONES INSTRUCCION	{ $1.push($2); $$ = $1; }
-	| INSTRUCCION					{ $$ = [$1]; }
+CUERPO
+	: INSTRUCCION CUERPO	{
+								var pila = eval('$$');
+								$$ = instruccionesAPI.nuevoCuerpo(pila[pila.length-2], pila[pila.length-1]);
+							}
+	| INSTRUCCION			{
+								var pila = eval('$$');
+								$$ = instruccionesAPI.nuevoCuerpo(pila[pila.length-1], undefined);
+							}
 	;
 
 INSTRUCCION
+	: FUNCION	{ $$ = $1; }
+	| SENTENCIA	{ $$ = {tipo: "INSTRUCCIONES", instruccion: [$1] } }
+	;
+
+LSENTENCIA
+	: LSENTENCIA SENTENCIA	{ $1.push($2); $$ = $1; }
+	| SENTENCIA				{ $$ = [$1]; }
+	;
+
+SENTENCIA
 		: timprimir parA EXP_LOGICA parC ptcoma					{ $$ = instruccionesAPI.nuevoImprimir($3, this._$.first_line, this._$.first_column ); }
 		| tif parA EXP_LOGICA parC llaveA INSTRUCCION llaveC	{ $$ = instruccionesAPI.nuevoIf($3, $6); }
 		| VARIABLES												{ $$ = $1; }
+		| LLAMADA ptcoma										{ $$ = $1; }
+		| TRANSFERENCIA ptcoma									{ $$ = $1; }
 		| error { console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); }
 		;
+
+FUNCION
+	: tFunction identificador parA PARAM_FUN parC _TIPO_DATO llaveA LSENTENCIA llaveC
+	{ $$ = instruccionesAPI.nuevoFuncion($1, $2, $4, $6, $8, this._$.first_line, this._$.first_column);	};
+
+LLAMADA
+	: identificador parA PARAM_LLAMADA parC 
+	{ $$ = instruccionesAPI.nuevoLlamada($1, $3, this._$.first_line, this._$.first_column); };
+
+PARAM_LLAMADA
+	: PARAM_LLAMADA coma EXP_LOGICA	{ $1.push($3); $$ = $1; }
+	| EXP_LOGICA					{ $$ = [$1]; }
+	|
+	;
+PARAM_FUN
+	: PARAM_FUN coma PARAM	{ $1.push($3); $$ = $1; }
+	| PARAM					{ $$ = [$1]; }
+	|
+	;
+
+PARAM 
+	: identificador _TIPO_DATO { $$ = instruccionesAPI.nuevoParametro($1, $2, this._$.first_line, this._$.first_column ); } 
+	;
+
+
+_TIPO_DATO
+	: dospt TIPO_VARIABLE 	{ $$ = $2; }
+	| dospt tVoid			{ $$ = TIPO_DATO.VOID; }
+	|
+	;	
+
+
 
 VARIABLES
 	: tLet LISTA_ID ptcoma												{ $$ = instruccionesAPI.nuevoVariable($1, $2); }
@@ -177,7 +238,8 @@ EXP
 	| cadena3					{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA, this._$.first_line, this._$.first_column); }
 	| booleano					{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.BOOLEANO, this._$.first_line, this._$.first_column); }
 	| identificador				{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR, this._$.first_line, this._$.first_column); }
-	| parA EXP_LOGICA parC 		{ $$ = $2; }
+	| parA EXP_LOGICA parC 		{ $$ = $2; }	
+	| LLAMADA					{ $$ = $1; }
 	;
 /*
 EXP_CADENA
@@ -206,8 +268,15 @@ EXP_LOGICA
 	;
 
 TIPO_VARIABLE
-	: tString		{ $$ = TIPO_DATO.STRING; }
+	: tString		{ $$ = TIPO_DATO.STRIN; }
 	| tNumber		{ $$ = TIPO_DATO.NUMERO; }
 	| tBoolean		{ $$ = TIPO_DATO.BOOLENO; }
-	| identificador	{ $$ = TIPO_DATO.IDENTIFICADOR; }
+	| identificador	{ $$ = $1; }
+	;
+
+TRANSFERENCIA
+	: tReturn EXP_LOGICA	{ $$ = instruccionesAPI.nuevoTransferencia($1, $2, this._$.first_line, this._$.first_column); }
+	| tReturn				{ $$ = instruccionesAPI.nuevoTransferencia($1, undefined, this._$.first_line, this._$.first_column); }
+	| tBreak				{ $$ = instruccionesAPI.nuevoTransferencia($1, undefined, this._$.first_line, this._$.first_column); }
+	| tContinue				{ $$ = instruccionesAPI.nuevoTransferencia($1, undefined, this._$.first_line, this._$.first_column); }
 	;
