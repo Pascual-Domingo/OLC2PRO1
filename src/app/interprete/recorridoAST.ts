@@ -7,7 +7,7 @@ import { TRANSFERENCIA } from './transferencia';
 
 let tsGlobal: TS;
 let Terrores: TE;
-let transferir = new TRANSFERENCIA();
+let transferir = new TRANSFERENCIA(false);
 let salidaConsola = "";
 let _ambito = "global";
 
@@ -69,6 +69,10 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
       try { menosMenos(instruccion[i], tablaDeSimbolos); } catch (error) { }
     } else if (instruccion[i].tipo === TIPO_INSTRUCCION.SWITCH) {
       try { procesarSwitch(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.INS_WHILE) {
+      try { procesarwHILE(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.INS_DOWHILE) {
+      try { procesarDOwHILE(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
     }
 
 
@@ -78,13 +82,42 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
 
 }
 
+
+function procesarDOwHILE(instruccion, tablaDeSimbolos, miTransferencia) {
+  do {
+    const tsMientras = new TS(copiar(tablaDeSimbolos.simbolos), tablaDeSimbolos);
+    const trans_while = new TRANSFERENCIA(miTransferencia.flagFuncion);
+    trans_while.flagCiclo = true;
+    listaInstruccion(instruccion.instruccion, tsMientras, trans_while);
+
+    if (trans_while.flagBreak || trans_while.flagReturn) {
+      miTransferencia.expresion = trans_while.expresion;
+      break;
+    }
+
+  } while (expLogica(instruccion.expresion, tablaDeSimbolos));
+}
+
+function procesarwHILE(instruccion, tablaDeSimbolos, miTransferencia) {
+  while (expLogica(instruccion.expresion, tablaDeSimbolos)) {
+    const tsMientras = new TS(copiar(tablaDeSimbolos.simbolos), tablaDeSimbolos);
+    const trans_while = new TRANSFERENCIA(miTransferencia.flagFuncion);
+    trans_while.flagCiclo = true;
+    listaInstruccion(instruccion.instruccion, tsMientras, trans_while);
+
+    if (trans_while.flagBreak || trans_while.flagReturn) {
+      miTransferencia.expresion = trans_while.expresion;
+      break;
+    }
+  }
+}
+
 function procesarSwitch(instruccion, tablaDeSimbolos, miTransferencia) {
   var evaluar = true;
   const valorExpresion = procesarcadena(instruccion.expresion, tablaDeSimbolos);
   const tsSwitch = new TS(copiar(tablaDeSimbolos.simbolos), Terrores);
-  const trans_switch = new TRANSFERENCIA();
+  const trans_switch = new TRANSFERENCIA(miTransferencia.flagFuncion);
   trans_switch.flagSwitch = true;
-  trans_switch.flagFuncion = miTransferencia.flagFuncion;
   const lscasos = instruccion.casos;
   for (let index = 0; index < lscasos.length; index++) {
     if (lscasos[index].tipo === TIPO_OPCION_SWITCH.CASO) {
@@ -92,7 +125,7 @@ function procesarSwitch(instruccion, tablaDeSimbolos, miTransferencia) {
       if (valorExpCase.valor == valorExpresion.valor) {
         listaInstruccion(lscasos[index].instrucciones, tsSwitch, trans_switch);
         evaluar = false;
-        if (trans_switch.flagReturn || trans_switch.flagBreak ) break;
+        if (trans_switch.flagReturn || trans_switch.flagBreak) break;
       }
     } else {
       if (evaluar)
@@ -100,6 +133,7 @@ function procesarSwitch(instruccion, tablaDeSimbolos, miTransferencia) {
     }
   }
 
+  if (trans_switch.flagReturn) miTransferencia.expresion = trans_switch.expresion;
 
 
   /*
@@ -121,7 +155,7 @@ function procesarSwitch(instruccion, tablaDeSimbolos, miTransferencia) {
 
   */
 
-  if (trans_switch.flagReturn) miTransferencia.expresion = trans_switch.expresion;
+
 }
 
 function procesarIf(instruccion, tablaDeSimbolos, miTransferencia) {
@@ -163,29 +197,29 @@ function procesarElseIf(instruccion, tablaDeSimbolos, miTransferencia) {
 }
 
 function procesarTransferencia(instruccion, tablaDeSimbolos, miTransferencia) {
-  if (instruccion.valor === "break" && miTransferencia.flagSwitch) {
+  if (instruccion.valor === "break" && (miTransferencia.flagSwitch || miTransferencia.flagCiclo)) {
     miTransferencia.flagBreak = true;
-  } else
-    if (instruccion.valor === "return" && instruccion.expresion !== undefined && miTransferencia.flagFuncion) {
-      miTransferencia.expresion = procesarcadena(instruccion.expresion, tablaDeSimbolos);
-      miTransferencia.flagReturn = true;
-    } else if (instruccion.valor === "return" && instruccion.expresion === undefined && miTransferencia.flagFuncion) {
-      console.log('funcion sin retorno');
-      miTransferencia.flagReturn = true;
-    } else {
-      let msj = '';
-      if (!miTransferencia.flagFuncion) msj = 'una funcion'; else
-        if (!miTransferencia.flagCiclo) msj = 'un ciclo'; else
-          if (!miTransferencia.flagSwitch) msj = 'un switch-case';
-      Terrores.add("semantico", ' la sentencia ' + instruccion.valor + ' debe estar dentro de ' + msj, instruccion.linea, instruccion.columna);
-    }
+  } else if (instruccion.valor === "return" && instruccion.expresion !== undefined && miTransferencia.flagFuncion) {
+    miTransferencia.expresion = procesarcadena(instruccion.expresion, tablaDeSimbolos);
+    miTransferencia.flagReturn = true;
+  } else if (instruccion.valor === "return" && instruccion.expresion === undefined && miTransferencia.flagFuncion) {
+    console.log('funcion sin retorno');
+    miTransferencia.flagReturn = true;
+  } else {
+    let msj = '';
+    if (!miTransferencia.flagFuncion) msj = 'una funcion'; else
+      if (!miTransferencia.flagCiclo) msj = 'un ciclo'; else
+        if (!miTransferencia.flagSwitch) msj = 'un switch-case';
+    Terrores.add("semantico", ' la sentencia ' + instruccion.valor + ' debe estar dentro de ' + msj, instruccion.linea, instruccion.columna);
+    miTransferencia.flagReturn = true;
+  }
 }
 
 function procesarfuncion(instruccion, tablaDeSimbolos) {
   _ambito = "local";
   const mifuncion = tablaDeSimbolos.obtener(instruccion.identificador, instruccion.linea, instruccion.columna);
   const tsFun = new TS(copiar(tsGlobal.simbolos), Terrores);
-  const transferenciaFuncion = new TRANSFERENCIA();
+  const transferenciaFuncion = new TRANSFERENCIA(true);
   let flag: boolean = false;
   if (instruccion.parametro === undefined && mifuncion.parametro === undefined) {
     flag = true;

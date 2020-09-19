@@ -47,7 +47,8 @@ const tIPO_OPERACION = {
 // Constantes para los tipos de 'instrucciones' válidas en nuestra gramática.
 const tIPO_INSTRUCCION = {
 	IMPRIMIR:		'INSTR_IMPRIMIR',
-	MIENTRAS:		'INSTR_MIENTRAS',
+	INS_WHILE:		'INSTR_WHILE',
+	INS_DOWHILE:	'INSTR_DOWHILE',
 	DECLARACION:	'INSTR_DECLARACION',
 	ASIGNACION:		'INSTR_ASIGANCION',
 	IF:				'INSTR_IF',
@@ -148,11 +149,21 @@ const InstruccionesAPI = {
 	 * @param {*} expresultionLogica 
 	 * @param {*} instrucciones 
 	 */
-	nuevoMientras: function(expresultionLogica, instrucciones, linea, columna) {
+	nuevoWhile: function(expresultionLogica, instrucciones, linea, columna) {
 		return {
-			tipo: TIPO_INSTRUCCION.MIENTRAS,
-			expresultionLogica: expresultionLogica,
-			instrucciones: instrucciones,
+			tipo: TIPO_INSTRUCCION.INS_WHILE,
+			expresion: expresultionLogica,
+			instruccion: instrucciones,
+			linea: linea,
+			columna: columna
+		};
+	},
+
+	nuevoDoWhile: function(instrucciones, expresultionLogica, linea, columna) {
+		return {
+			tipo: TIPO_INSTRUCCION.INS_DOWHILE,
+			expresion: expresultionLogica,
+			instruccion: instrucciones,
 			linea: linea,
 			columna: columna
 		};

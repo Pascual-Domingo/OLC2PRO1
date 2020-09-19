@@ -50,7 +50,7 @@ masmas			"++"
 menosmenos		"--"
 
 
-
+tDo				"do"
 tif				"if"
 tElse			"else"
 timprimir		"console.log"
@@ -67,6 +67,8 @@ tReturn			"return"
 tSwitch 		"switch"
 tCase			"case"
 tDefault		"default"
+tWhile			"while"
+tFor			"for"
 
 
 %x INITIAL
@@ -99,6 +101,7 @@ tDefault		"default"
 <INITIAL>{menosmenos}		%{ return 'menosmenos'; %}
 
 
+<INITIAL>{tDo}				%{ return 'tDo'; %}
 <INITIAL>{tString}			%{ return 'tString'; %}
 <INITIAL>{tNumber}			%{ return 'tNumber'; %}
 <INITIAL>{tBoolean}			%{ return 'tBoolean'; %}
@@ -114,7 +117,8 @@ tDefault		"default"
 <INITIAL>{tBreak}			%{ return 'tBreak'; %}
 <INITIAL>{tSwitch}			%{ return 'tSwitch'; %}
 <INITIAL>{tCase}			%{ return 'tCase'; %}
-<INITIAL>{tDefault}			%{ return 'tDefault'; %}
+<INITIAL>{tWhile}			%{ return 'tWhile'; %}
+<INITIAL>{tFor}				%{ return 'tFor'; %}
 
 
 <INITIAL>{booleano}			%{ return 'booleano'; %}
@@ -184,12 +188,22 @@ SENTENCIA
 		| TRANSFERENCIA ptcoma							{ $$ = $1; }
 		| MASMAS_MENOSMENOS ptcoma						{ $$ = $1; }
 		| SWITCH 										{ $$ = $1; }
+		| INS_WHILE										{ $$ = $1; }
+		| INS_DOWHILE									{ $$ = $1; }
 		| error { console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); }
 		;
 
+INS_WHILE
+	: tWhile parA EXP_LOGICA parC llaveA LSENTENCIA llaveC
+	{ $$ = instruccionesAPI.nuevoWhile($3, $6, this._$.first_line, this._$.first_column); };
+
+INS_DOWHILE
+	: tDo llaveA LSENTENCIA llaveC tWhile parA EXP_LOGICA parC ptcoma
+	{ $$ = instruccionesAPI.nuevoDoWhile($3, $7, this._$.first_line, this._$.first_column); };		
+
 SWITCH
 	: tSwitch parA EXP_LOGICA parC llaveA CASOS llaveC 
-	{ $$ = instruccionesAPI.nuevoSwitch($3,$6, this._$.first_line, this._$.first_column); };
+	{ $$ = instruccionesAPI.nuevoSwitch($3, $6, this._$.first_line, this._$.first_column); };
 
 
 CASOS 
