@@ -46,10 +46,13 @@ igig			"=="
 noig			"!="
 and 			"&&"
 or				"||"
+masmas			"++"
+menosmenos		"--"
 
 
 
 tif				"if"
+tElse			"else"
 timprimir		"console.log"
 tLet			"let"
 tConst			"const"
@@ -61,6 +64,9 @@ tVoid			"void"
 tContinue		"continue"
 tBreak			"break"
 tReturn			"return"
+tSwitch 		"switch"
+tCase			"case"
+tDefault		"default"
 
 
 %x INITIAL
@@ -89,11 +95,15 @@ tReturn			"return"
 <INITIAL>{coma}				%{ return 'coma'; %}
 <INITIAL>{and}				%{ return 'and'; %}
 <INITIAL>{or}				%{ return 'or'; %}
+<INITIAL>{masmas}			%{ return 'masmas'; %}
+<INITIAL>{menosmenos}		%{ return 'menosmenos'; %}
+
 
 <INITIAL>{tString}			%{ return 'tString'; %}
 <INITIAL>{tNumber}			%{ return 'tNumber'; %}
 <INITIAL>{tBoolean}			%{ return 'tBoolean'; %}
 <INITIAL>{tif}				%{ return 'tif'; %}
+<INITIAL>{tElse}			%{ return 'tElse'; %}
 <INITIAL>{timprimir}		%{ return 'timprimir'; %}
 <INITIAL>{tLet}				%{ return 'tLet'; %}
 <INITIAL>{tConst}			%{ return 'tConst'; %}
@@ -102,6 +112,9 @@ tReturn			"return"
 <INITIAL>{tReturn}			%{ return 'tReturn'; %}
 <INITIAL>{tContinue}		%{ return 'tContinue'; %}
 <INITIAL>{tBreak}			%{ return 'tBreak'; %}
+<INITIAL>{tSwitch}			%{ return 'tSwitch'; %}
+<INITIAL>{tCase}			%{ return 'tCase'; %}
+<INITIAL>{tDefault}			%{ return 'tDefault'; %}
 
 
 <INITIAL>{booleano}			%{ return 'booleano'; %}
@@ -164,13 +177,49 @@ LSENTENCIA
 	;
 
 SENTENCIA
-		: timprimir parA EXP_LOGICA parC ptcoma					{ $$ = instruccionesAPI.nuevoImprimir($3, this._$.first_line, this._$.first_column ); }
-		| tif parA EXP_LOGICA parC llaveA INSTRUCCION llaveC	{ $$ = instruccionesAPI.nuevoIf($3, $6); }
-		| VARIABLES												{ $$ = $1; }
-		| LLAMADA ptcoma										{ $$ = $1; }
-		| TRANSFERENCIA ptcoma									{ $$ = $1; }
+		: timprimir parA EXP_LOGICA parC ptcoma			{ $$ = instruccionesAPI.nuevoImprimir($3, this._$.first_line, this._$.first_column ); }
+		| SENTENCIA_IF									{ $$ = $1; }
+		| VARIABLES										{ $$ = $1; }
+		| LLAMADA ptcoma								{ $$ = $1; }
+		| TRANSFERENCIA ptcoma							{ $$ = $1; }
+		| MASMAS_MENOSMENOS ptcoma						{ $$ = $1; }
+		| SWITCH 										{ $$ = $1; }
 		| error { console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); }
 		;
+
+SWITCH
+	: tSwitch parA EXP_LOGICA parC llaveA CASOS llaveC 
+	{ $$ = instruccionesAPI.nuevoSwitch($3,$6, this._$.first_line, this._$.first_column); };
+
+
+CASOS 
+	: CASOS CASO_EVALUAR 	{ $1.push($2); $$ = $1; }
+  	| CASO_EVALUAR			{ $$ = instruccionesAPI.nuevoListaCasos($1);}
+;
+
+CASO_EVALUAR 
+	: tCase EXP_LOGICA dospt LSENTENCIA { $$ = instruccionesAPI.nuevoCaso($2,$4, this._$.first_line, this._$.first_column); }
+  	| tDefault dospt LSENTENCIA { $$ = instruccionesAPI.nuevoCasoDef($3, this._$.first_line, this._$.first_column); }
+;
+
+
+
+SENTENCIA_IF
+	: IF				{ $$ = $1; }
+	| IF ELSE			{ $$ = instruccionesAPI.nuevoIfElse($1, $2, this._$.first_line, this._$.first_column); }
+	| IF ELSEIF			{ $$ = instruccionesAPI.nuevoElseIf($1, $2, undefined, this._$.first_line, this._$.first_column); }
+	| IF ELSEIF ELSE	{ $$ = instruccionesAPI.nuevoElseIf($1, $2, $3, this._$.first_line, this._$.first_column); }
+	;
+
+ELSEIF	
+	: ELSEIF  tElse IF	{ $1.push($3); $$ = $1; }
+	| tElse IF			{ $$ = [$2]; }
+	; 
+
+ELSE : tElse llaveA LSENTENCIA llaveC { $$ = $3; };
+IF	: tif parA EXP_LOGICA parC llaveA LSENTENCIA llaveC	
+	{ $$ = instruccionesAPI.nuevoIf($3, $6, this._$.first_line, this._$.first_column); } ;
+
 
 FUNCION
 	: tFunction identificador parA PARAM_FUN parC _TIPO_DATO llaveA LSENTENCIA llaveC
@@ -240,6 +289,8 @@ EXP
 	| identificador				{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR, this._$.first_line, this._$.first_column); }
 	| parA EXP_LOGICA parC 		{ $$ = $2; }	
 	| LLAMADA					{ $$ = $1; }
+	| MASMAS_MENOSMENOS			{ $$ = $1; }
+	| error { console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); }
 	;
 /*
 EXP_CADENA
@@ -279,4 +330,9 @@ TRANSFERENCIA
 	| tReturn				{ $$ = instruccionesAPI.nuevoTransferencia($1, undefined, this._$.first_line, this._$.first_column); }
 	| tBreak				{ $$ = instruccionesAPI.nuevoTransferencia($1, undefined, this._$.first_line, this._$.first_column); }
 	| tContinue				{ $$ = instruccionesAPI.nuevoTransferencia($1, undefined, this._$.first_line, this._$.first_column); }
+	;
+
+MASMAS_MENOSMENOS
+	: identificador masmas		{ $$ = instruccionesAPI.nuevoMasmas($1, this._$.first_line, this._$.first_column); }
+	| identificador menosmenos	{ $$ = instruccionesAPI.nuevoMenosmenos($1, this._$.first_line, this._$.first_column); }
 	;

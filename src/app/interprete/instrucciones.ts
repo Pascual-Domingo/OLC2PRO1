@@ -51,7 +51,8 @@ const tIPO_INSTRUCCION = {
 	DECLARACION:	'INSTR_DECLARACION',
 	ASIGNACION:		'INSTR_ASIGANCION',
 	IF:				'INSTR_IF',
-	IF_ELSE:		'INSTR_ELSE',
+	IF_ELSE:		'IF_ELSE',
+	ELSEIF:			'ELSEIF',
 	PARA: 			'INST_PARA',
 	SWITCH:			'SWITCH',
 	SWITCH_OP:		'SWITCH_OP',
@@ -62,6 +63,8 @@ const tIPO_INSTRUCCION = {
 	CUERPO:			'CUERPO',
 	LLAMADA:		'LLAMADA',
 	TRANSFERIR:		'TRANSFERIR',
+	MASMAS:			'MASMAS',
+	MENOSMENOS:		'MENOSMENOS',
 }
 
 // Constantes para los tipos de OPCION_SWITCH validas en la gramática
@@ -233,7 +236,7 @@ const InstruccionesAPI = {
 	nuevoIf: function(expresultionLogica, instrucciones, linea, columna) {
 		return {
 			tipo: TIPO_INSTRUCCION.IF,
-			expresultionLogica: expresultionLogica,
+			expresion: expresultionLogica,
 			instrucciones: instrucciones,
 			linea: linea,
 			columna: columna
@@ -246,12 +249,22 @@ const InstruccionesAPI = {
 	 * @param {*} instruccionesIfVerdadero 
 	 * @param {*} instruccionesIfFalso 
 	 */
-	nuevoIfElse: function(expresultionLogica, instruccionesIfVerdadero, instruccionesIfFalso, linea, columna) {
+	nuevoIfElse: function(instruccionesIfVerdadero, instruccionesIfFalso, linea, columna) {
 		return {
 			tipo: TIPO_INSTRUCCION.IF_ELSE,
-			expresultionLogica: expresultionLogica,
-			instruccionesIfVerdadero: instruccionesIfVerdadero,
-			instruccionesIfFalso: instruccionesIfFalso,
+			instruccionIf: instruccionesIfVerdadero,
+			instruccionElse: instruccionesIfFalso,
+			linea: linea,
+			columna: columna
+		}
+	},
+
+	nuevoElseIf(miIf, elseif, mielse, linea, columna){
+		return{
+			tipo: tIPO_INSTRUCCION.ELSEIF,
+			instruccionIf: miIf,
+			instruccionElseIf: elseif,
+			instruccionElse: mielse,
 			linea: linea,
 			columna: columna
 		}
@@ -265,7 +278,7 @@ const InstruccionesAPI = {
 	nuevoSwitch: function(expresultionNumerica, casos, linea, columna) {
 		return {
 			tipo: TIPO_INSTRUCCION.SWITCH,
-			expresultionNumerica: expresultionNumerica,
+			expresion: expresultionNumerica,
 			casos: casos,
 			linea: linea,
 			columna: columna
@@ -290,7 +303,7 @@ const InstruccionesAPI = {
 	nuevoCaso: function(expresultionNumerica, instrucciones, linea, columna) {
 		return {
 			tipo: TIPO_OPCION_SWITCH.CASO,
-			expresultionNumerica: expresultionNumerica,
+			expresion: expresultionNumerica,
 			instrucciones: instrucciones,
 			linea: linea,
 			columna: columna
@@ -362,6 +375,24 @@ const InstruccionesAPI = {
 			tipo: tIPO_INSTRUCCION.TRANSFERIR,
 			valor: val,
 			expresion: exp,
+			linea: linea,
+			columna: columna
+		}
+	},
+
+	nuevoMasmas(id, linea, columna){
+		return{
+			tipo: tIPO_INSTRUCCION.MASMAS,
+			identificador: id,
+			linea: linea,
+			columna: columna
+		}
+	},
+
+	nuevoMenosmenos(id, linea, columna){
+		return{
+			tipo: tIPO_INSTRUCCION.MENOSMENOS,
+			identificador: id,
 			linea: linea,
 			columna: columna
 		}

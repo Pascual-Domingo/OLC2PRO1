@@ -1,5 +1,5 @@
 
-import { TIPO_OPERACION, TIPO_VALOR, TIPO_INSTRUCCION, instruccionesAPI } from './instrucciones';
+import { TIPO_OPERACION, TIPO_VALOR, TIPO_INSTRUCCION, instruccionesAPI, TIPO_OPCION_SWITCH } from './instrucciones';
 import { TIPO_DATO, TS } from './tabla_simbolos';
 import { TE } from './tabla_errores';
 import { TRANSFERENCIA } from './transferencia';
@@ -57,7 +57,20 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
       try { procesarfuncion(instruccion[i], tablaDeSimbolos); } catch (error) { }
     } else if (instruccion[i].tipo === TIPO_INSTRUCCION.TRANSFERIR) {
       try { procesarTransferencia(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.IF) {
+      try { procesarIf(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.IF_ELSE) {
+      try { procesarIf_else(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.ELSEIF) {
+      try { procesarElseIf(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.MASMAS) {
+      try { masMas(instruccion[i], tablaDeSimbolos); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.MENOSMENOS) {
+      try { menosMenos(instruccion[i], tablaDeSimbolos); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.SWITCH) {
+      try { procesarSwitch(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
     }
+
 
     if (miTransferencia.flagContinue || miTransferencia.flagBreak || miTransferencia.flagReturn) break;
 
@@ -65,36 +78,120 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
 
 }
 
-function procesarTransferencia(instruccion, tablaDeSimbolos, miTransferencia) {
-  if (instruccion.valor === "return" && instruccion.expresion !== undefined && miTransferencia.flagFuncion) {
-    miTransferencia.expresion = procesarcadena(instruccion.expresion, tablaDeSimbolos);
-    miTransferencia.flagReturn = true;
-    /*console.log(result);
-    miTransferencia.expresion = result;
-    */
-  } else if (instruccion.valor === "return" && instruccion.expresion === undefined && miTransferencia.flagFuncion) {
-    console.log('funcion sin retorno');
-    miTransferencia.flagReturn = true;
-  } else {
-    let msj = '';
-    if (!miTransferencia.flagFuncion) msj = 'una funcion'; else
-      if (!miTransferencia.flagCiclo) msj = 'un ciclo'; else
-        if (!miTransferencia.flagSwitch) msj = 'un switch-case';
-    Terrores.add("semantico", ' la sentencia ' + instruccion.valor + ' debe estar dentro de ' + msj, instruccion.linea, instruccion.columna);
+function procesarSwitch(instruccion, tablaDeSimbolos, miTransferencia) {
+  var evaluar = true;
+  const valorExpresion = procesarcadena(instruccion.expresion, tablaDeSimbolos);
+  const tsSwitch = new TS(copiar(tablaDeSimbolos.simbolos), Terrores);
+  const trans_switch = new TRANSFERENCIA();
+  trans_switch.flagSwitch = true;
+  trans_switch.flagFuncion = miTransferencia.flagFuncion;
+  const lscasos = instruccion.casos;
+  for (let index = 0; index < lscasos.length; index++) {
+    if (lscasos[index].tipo === TIPO_OPCION_SWITCH.CASO) {
+      const valorExpCase = procesarcadena(lscasos[index].expresion, tsSwitch);
+      if (valorExpCase.valor == valorExpresion.valor) {
+        listaInstruccion(lscasos[index].instrucciones, tsSwitch, trans_switch);
+        evaluar = false;
+        if (trans_switch.flagReturn || trans_switch.flagBreak ) break;
+      }
+    } else {
+      if (evaluar)
+        listaInstruccion(lscasos[index].instrucciones, tsSwitch, trans_switch);
+    }
   }
+
+
+
+  /*
+  instruccion.casos.forEach(caso => {
+    if (caso.tipo == TIPO_OPCION_SWITCH.CASO) {
+      const valorExpCase = procesarcadena(caso.expresion, tsSwitch);
+
+      if (valorExpCase.valor == valorExpresion.valor) {
+        listaInstruccion(caso.instrucciones, tsSwitch, trans_switch);
+        evaluar = false;
+        if (trans_switch.flagReturn) break;
+      }
+    }
+    else {
+      if (evaluar)
+        listaInstruccion(caso.instrucciones, tsSwitch, trans_switch);
+    }
+  });
+
+  */
+
+  if (trans_switch.flagReturn) miTransferencia.expresion = trans_switch.expresion;
+}
+
+function procesarIf(instruccion, tablaDeSimbolos, miTransferencia) {
+  const valorCondicion = expLogica(instruccion.expresion, tablaDeSimbolos);
+  //console.log(valorCondicion);
+  if (valorCondicion) {
+    const tsIf = new TS(copiar(tablaDeSimbolos.simbolos), Terrores);
+    //console.log(instruccion.instrucciones);
+    listaInstruccion(instruccion.instrucciones, tsIf, miTransferencia);
+  }
+  return valorCondicion;
+}
+
+function procesarIf_else(instruccion, tablaDeSimbolos, miTransferencia) {
+  const valorCondicion = procesarIf(instruccion.instruccionIf, tablaDeSimbolos, miTransferencia);
+  if (!valorCondicion) {
+    const tsElse = new TS(copiar(tablaDeSimbolos.simbolos), Terrores);
+    listaInstruccion(instruccion.instruccionElse, tsElse, miTransferencia);
+  }
+}
+
+function procesarElseIf(instruccion, tablaDeSimbolos, miTransferencia) {
+  const condicionIf = procesarIf(instruccion.instruccionIf, tablaDeSimbolos, miTransferencia);
+  let condicionElseIf = false;
+  if (!condicionIf) { //entra en las sentencias else if(){}
+    const element = instruccion.instruccionElseIf;
+    for (let index = 0; index < element.length; index++) { //recorre cada else if
+      condicionElseIf = procesarIf(element[index], tablaDeSimbolos, miTransferencia);
+      if (condicionElseIf) break; //si lagun else if es verdadero sale del ciclo
+    }
+  }
+
+  if (instruccion.instruccionElse !== undefined) {
+    if (!condicionElseIf) {
+      const tsElse = new TS(copiar(tablaDeSimbolos.simbolos), Terrores);
+      listaInstruccion(instruccion.instruccionElse, tsElse, miTransferencia);
+    }
+  }
+}
+
+function procesarTransferencia(instruccion, tablaDeSimbolos, miTransferencia) {
+  if (instruccion.valor === "break" && miTransferencia.flagSwitch) {
+    miTransferencia.flagBreak = true;
+  } else
+    if (instruccion.valor === "return" && instruccion.expresion !== undefined && miTransferencia.flagFuncion) {
+      miTransferencia.expresion = procesarcadena(instruccion.expresion, tablaDeSimbolos);
+      miTransferencia.flagReturn = true;
+    } else if (instruccion.valor === "return" && instruccion.expresion === undefined && miTransferencia.flagFuncion) {
+      console.log('funcion sin retorno');
+      miTransferencia.flagReturn = true;
+    } else {
+      let msj = '';
+      if (!miTransferencia.flagFuncion) msj = 'una funcion'; else
+        if (!miTransferencia.flagCiclo) msj = 'un ciclo'; else
+          if (!miTransferencia.flagSwitch) msj = 'un switch-case';
+      Terrores.add("semantico", ' la sentencia ' + instruccion.valor + ' debe estar dentro de ' + msj, instruccion.linea, instruccion.columna);
+    }
 }
 
 function procesarfuncion(instruccion, tablaDeSimbolos) {
   _ambito = "local";
   const mifuncion = tablaDeSimbolos.obtener(instruccion.identificador, instruccion.linea, instruccion.columna);
-  const tsFun = new TS(copiar(tablaDeSimbolos.simbolos), Terrores);
+  const tsFun = new TS(copiar(tsGlobal.simbolos), Terrores);
   const transferenciaFuncion = new TRANSFERENCIA();
   let flag: boolean = false;
   if (instruccion.parametro === undefined && mifuncion.parametro === undefined) {
     flag = true;
   } else if (instruccion.parametro !== undefined && mifuncion.parametro !== undefined) {
     if (instruccion.parametro.length === mifuncion.parametro.length) {
-      procesarParametro(mifuncion.parametro, instruccion.parametro, tsFun);
+      procesarParametro(mifuncion.parametro, instruccion.parametro, tsFun, tablaDeSimbolos);
       flag = true;
     } else {
       Terrores.add("semantico", ' parametro fuera de rango en la funcion ' + mifuncion.id + '() ', mifuncion.linea, mifuncion.columna);
@@ -106,7 +203,6 @@ function procesarfuncion(instruccion, tablaDeSimbolos) {
   if (flag) {
     transferenciaFuncion.flagFuncion = true;
     listaInstruccion(mifuncion.valor, tsFun, transferenciaFuncion);
-    console.log(transferenciaFuncion.expresion);
     if (mifuncion.tipo === transferenciaFuncion.expresion.tipo) return transferenciaFuncion.expresion;
     if (mifuncion.tipo === TIPO_DATO.VOID && transferenciaFuncion.expresion !== undefined) {
       Terrores.add("semantico", ' funcion no retornable ' + mifuncion.id + '() ', mifuncion.linea, mifuncion.columna);
@@ -119,7 +215,7 @@ function procesarfuncion(instruccion, tablaDeSimbolos) {
 }
 
 
-function procesarParametro(parametro, llamada, tablaDeSimbolos) {
+function procesarParametro(parametro, llamada, tablaDeSimbolos, simboloanterior) {
   for (let i = 0; i < parametro.length; i++) {
     /* crea objeto tipo variable */
     const result = instruccionesAPI.nuevoDeclaracionAsignacion(
@@ -130,11 +226,29 @@ function procesarParametro(parametro, llamada, tablaDeSimbolos) {
       parametro[i].columna
     );
     result.tipo_declaracion = "let";
-    procesar_asiganacionDeclarado(result, tablaDeSimbolos)
+    procesarDeclaracion(result, tablaDeSimbolos)
+    const valor = procesarcadena(result.expresion, simboloanterior); //aqui quiero que retorne: tipo y valor
+    tablaDeSimbolos.actualizar(result.identificador, valor, result.linea, result.columna);
+    //procesar_asiganacionDeclarado(result, tablaDeSimbolos)
   }
 
 }
 
+function masMas(instruccion, tablaDeSimbolos) {
+  const sym = tablaDeSimbolos.obtener(instruccion.identificador, instruccion.linea, instruccion.columna);
+  const valor = { valor: sym.valor + 1, tipo: sym.tipo }
+  tablaDeSimbolos.actualizar(sym.id, valor, sym.linea, sym.columna);
+  valor.valor = valor.valor - 1;
+  return valor;
+}
+
+function menosMenos(instruccion, tablaDeSimbolos) {
+  const sym = tablaDeSimbolos.obtener(instruccion.identificador, instruccion.linea, instruccion.columna);
+  const valor = { valor: sym.valor - 1, tipo: sym.tipo }
+  tablaDeSimbolos.actualizar(sym.id, valor, sym.linea, sym.columna);
+  valor.valor = valor.valor + 1;
+  return valor;
+}
 
 function procesarAsignacion(instruccion, tablaDeSimbolos) {
   const valor = procesarcadena(instruccion.expresion, tablaDeSimbolos); //aqui quiero que retorne: tipo y valor
@@ -192,10 +306,10 @@ function procesarcadena(instruccion, tablaDeSimbolos) {
       return { valor: "true", tipo: TIPO_DATO.BOOLEANO }
     }
     return { valor: "false", tipo: TIPO_DATO.BOOLEANO }
-  } else {
-
-    return result;
   }
+
+  return result;
+
   /*
   if (expresion.tipo === TIPO_OPERACION.SUMA) {
       // Es una operación de concatenación.
@@ -225,24 +339,25 @@ function expLogica(expresion, tablaDeSimbolos) {
 
   if (expresion.tipo === TIPO_OPERACION.AND) {
     // En este caso necesitamos procesar los operandos para &&.
-    const valorIzq = exprRelacional(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
-    const valorDer = exprRelacional(expresion.operandoDer, tablaDeSimbolos);      // resolvemos el operando derecho.
+    const valorIzq = expLogica(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
+    const valorDer = expLogica(expresion.operandoDer, tablaDeSimbolos);      // resolvemos el operando derecho.
     if (typeof valorIzq === 'boolean' && typeof valorDer === 'boolean') return valorIzq && valorDer;
     Terrores.add("semantico", 'se esperaban expresiones booleanas para ejecutar la: ' + expresion.tipo, expresion.linea, expresion.columna);
     return;
   }
   if (expresion.tipo === TIPO_OPERACION.OR) {
     // En este caso necesitamos procesar los operandos para ||.
-    const valorIzq = exprRelacional(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
-    const valorDer = exprRelacional(expresion.operandoDer, tablaDeSimbolos);      // resolvemos el operando derecho.
+    const valorIzq = expLogica(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
+    const valorDer = expLogica(expresion.operandoDer, tablaDeSimbolos);      // resolvemos el operando derecho.
     if (typeof valorIzq === 'boolean' && typeof valorDer === 'boolean') return valorIzq || valorDer;
     Terrores.add("semantico", 'se esperaban expresiones booleanas para ejecutar la: ' + expresion.tipo, expresion.linea, expresion.columna);
     return;
   }
   if (expresion.tipo === TIPO_OPERACION.NOT) {
-    console.log(expresion);
+    //console.log(expresion);
     // En este caso necesitamos procesar solamente un operando para !.
     const valor = expLogica(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
+    //console.log(valor);
     if (typeof valor === 'boolean') return !valor;
     Terrores.add("semantico", 'se esperaban expresiones booleanas para ejecutar la: ' + expresion.tipo, expresion.linea, expresion.columna);
     return;
@@ -272,12 +387,18 @@ function exprRelacional(expresion, tablaDeSimbolos) {
     if (expresion.tipo === TIPO_OPERACION.MENOR_IGUAL) return valorIzq <= valorDer;
 
 
-  } else if (expresion.tipo === TIPO_OPERACION.DOBLE_IGUAL ||
-    expresion.tipo === TIPO_OPERACION.NO_IGUAL) {
+  } else if (expresion.tipo === TIPO_OPERACION.DOBLE_IGUAL || expresion.tipo === TIPO_OPERACION.NO_IGUAL) {
     let valorIzq = expAritmetica(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
     let valorDer = expAritmetica(expresion.operandoDer, tablaDeSimbolos);      // resolvemos el operando derecho.
-    if (expresion.tipo === TIPO_OPERACION.DOBLE_IGUAL) return valorIzq === valorDer;
-    if (expresion.tipo === TIPO_OPERACION.NO_IGUAL) return valorIzq !== valorDer;
+
+    if (expresion.tipo === TIPO_OPERACION.DOBLE_IGUAL) {
+      if (typeof valorIzq === 'boolean' && typeof valorDer === 'boolean') return valorIzq === valorDer;
+      return valorIzq.valor === valorDer.valor;
+    }
+    if (expresion.tipo === TIPO_OPERACION.NO_IGUAL) {
+      if (typeof valorIzq === 'boolean' && typeof valorDer === 'boolean') return valorIzq !== valorDer;
+      return valorIzq.valor !== valorDer.valor;
+    }
   }
 
   return expAritmetica(expresion, tablaDeSimbolos);
@@ -287,6 +408,12 @@ function exprRelacional(expresion, tablaDeSimbolos) {
 
 
 function expAritmetica(expresultion: any, tablaDeSimbolos) {
+  if (expresultion.tipo === TIPO_INSTRUCCION.MASMAS) {
+    return masMas(expresultion, tablaDeSimbolos);
+  }
+  if (expresultion.tipo === TIPO_INSTRUCCION.MENOSMENOS) {
+    return menosMenos(expresultion, tablaDeSimbolos);
+  }
   if (expresultion.tipo === TIPO_INSTRUCCION.LLAMADA) {
     return procesarfuncion(expresultion, tablaDeSimbolos);
   }
@@ -365,18 +492,18 @@ function expAritmetica(expresultion: any, tablaDeSimbolos) {
       const sym = tablaDeSimbolos.obtener(expresultion.valor, expresultion.linea, expresultion.columna);
       if (sym.tipo === TIPO_DATO.BOOLEANO) {
         if (sym.valor === "true") {
-          return { valor: true, tipo: TIPO_DATO.BOOLEANO }
+          return true;//{ valor: true, tipo: TIPO_DATO.BOOLEANO }
         }
-        return { valor: false, tipo: TIPO_DATO.BOOLEANO }
+        return false;//{ valor: false, tipo: TIPO_DATO.BOOLEANO }
       }
 
       return { valor: sym.valor, tipo: sym.tipo };
 
     } else if (expresultion.tipo === TIPO_VALOR.BOOLEANO) {
       if (expresultion.valor === "true") {
-        return { valor: true, tipo: TIPO_DATO.BOOLEANO }
+        return true;//{ valor: true, tipo: TIPO_DATO.BOOLEANO }
       }
-      return { valor: false, tipo: TIPO_DATO.BOOLEANO }
+      return false;//{ valor: false, tipo: TIPO_DATO.BOOLEANO }
     }
     else {
       Terrores.add("semantico", 'expresion no valida ' + expresultion.tipo + ': ' + expresultion.valor, expresultion.linea, expresultion.columna);
