@@ -54,7 +54,7 @@ const tIPO_INSTRUCCION = {
 	IF:				'INSTR_IF',
 	IF_ELSE:		'IF_ELSE',
 	ELSEIF:			'ELSEIF',
-	PARA: 			'INST_PARA',
+	INS_FOR: 			'INST_FOR',
 	SWITCH:			'SWITCH',
 	SWITCH_OP:		'SWITCH_OP',
 	SWITCH_DEF:		'SWITCH_DEF',
@@ -176,14 +176,13 @@ const InstruccionesAPI = {
 	 * @param {*} aumento
 	 * @param {*} decremento
 	 */
-	nuevoPara: function (variable, valorVariable, expresultionLogica, aumento, instrucciones, linea, columna) {
+	nuevoFor: function (variable, expresultionLogica, aumento, instrucciones, linea, columna) {
 		return {
-			tipo: TIPO_INSTRUCCION.PARA,
-			expresultionLogica: expresultionLogica,
-			instrucciones: instrucciones,
+			tipo: TIPO_INSTRUCCION.INS_FOR,
+			expresionlogica: expresultionLogica,
+			instruccion: instrucciones,
 			aumento: aumento,
 			variable: variable,
-			valorVariable: valorVariable,
 			linea: linea,
 			columna: columna
 		}

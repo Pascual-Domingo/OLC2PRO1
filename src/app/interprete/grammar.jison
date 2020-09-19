@@ -190,8 +190,18 @@ SENTENCIA
 		| SWITCH 										{ $$ = $1; }
 		| INS_WHILE										{ $$ = $1; }
 		| INS_DOWHILE									{ $$ = $1; }
+		| INS_FOR										{ $$ = $1; }
 		| error { console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); }
 		;
+
+INS_FOR
+	: tFor parA DECLARACION_FOR EXP_LOGICA ptcoma MASMAS_MENOSMENOS parC llaveA LSENTENCIA llaveC 
+	{ $$ = instruccionesAPI.nuevoFor($3,$4,$6,$9, this._$.first_line, this._$.first_column); };
+
+DECLARACION_FOR
+	: VARIABLES					{ $$ = $1; }
+	| identificador ptcoma		{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR, this._$.first_line, this._$.first_column); }
+	;
 
 INS_WHILE
 	: tWhile parA EXP_LOGICA parC llaveA LSENTENCIA llaveC

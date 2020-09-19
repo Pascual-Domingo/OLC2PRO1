@@ -3,6 +3,8 @@ import { TIPO_OPERACION, TIPO_VALOR, TIPO_INSTRUCCION, instruccionesAPI, TIPO_OP
 import { TIPO_DATO, TS } from './tabla_simbolos';
 import { TE } from './tabla_errores';
 import { TRANSFERENCIA } from './transferencia';
+import { variable } from '@angular/compiler/src/output/output_ast';
+import { iif } from 'rxjs';
 
 
 let tsGlobal: TS;
@@ -73,7 +75,10 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
       try { procesarwHILE(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
     } else if (instruccion[i].tipo === TIPO_INSTRUCCION.INS_DOWHILE) {
       try { procesarDOwHILE(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.INS_FOR) {
+      try { procesarFor(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
     }
+
 
 
     if (miTransferencia.flagContinue || miTransferencia.flagBreak || miTransferencia.flagReturn) break;
@@ -81,6 +86,36 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
   }
 
 }
+
+function procesarFor(instruccion, tablaDeSimbolos, miTransferencia) {
+  const tsFor = new TS(copiar(tablaDeSimbolos.simbolos), Terrores);
+  if (instruccion.variable.tipo !== TIPO_VALOR.IDENTIFICADOR) {
+    //valor = procesarcadena(instruccion.variable, tablaDeSimbolos); //aqui quiero que retorne: tipo y valor
+    procesarVariables(instruccion.variable, tsFor);
+  }
+  const valor = tsFor.obtener(instruccion.aumento.identificador, instruccion.aumento.linea, instruccion.aumento.columna);
+
+  //const valor = procesarExpresionCadena(instruccion.valorVariable, tablaDeSimbolos); //aqui quiero que retorne: tipo y valor
+  //tablaDeSimbolos.actualizar(instruccion.variable, valor);
+  if (valor.tipo_declaracion === "let") {
+    for (let i = valor.valor; expLogica(instruccion.expresionlogica, tsFor); listaInstruccion([instruccion.aumento], tsFor, miTransferencia)) {
+      const trans_for = new TRANSFERENCIA(miTransferencia.flagFuncion);
+      trans_for.flagCiclo = true;
+      const tsPara = new TS(copiar(tsFor.simbolos), trans_for);
+      listaInstruccion(instruccion.instruccion, tsPara, trans_for);
+      if (trans_for.flagBreak || trans_for.flagReturn) {
+        miTransferencia.expresion = trans_for.expresion;
+        break;
+      }
+    }
+  } else {
+    //error semantico
+  }
+
+
+}
+
+
 
 
 function procesarDOwHILE(instruccion, tablaDeSimbolos, miTransferencia) {

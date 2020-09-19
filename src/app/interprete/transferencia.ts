@@ -13,7 +13,7 @@ export class TRANSFERENCIA {
     expresion: any;
 
     constructor(banderaFuncion){
-        this.flagContinue = banderaFuncion;
+        this.flagFuncion = banderaFuncion;
     }
 
 }
