@@ -48,6 +48,7 @@ and 			"&&"
 or				"||"
 masmas			"++"
 menosmenos		"--"
+interrogacionC	"?"
 
 
 tDo				"do"
@@ -99,6 +100,7 @@ tFor			"for"
 <INITIAL>{or}				%{ return 'or'; %}
 <INITIAL>{masmas}			%{ return 'masmas'; %}
 <INITIAL>{menosmenos}		%{ return 'menosmenos'; %}
+<INITIAL>{interrogacionC}	%{ return 'interrogacionC'; %}
 
 
 <INITIAL>{tDo}				%{ return 'tDo'; %}
@@ -119,6 +121,7 @@ tFor			"for"
 <INITIAL>{tCase}			%{ return 'tCase'; %}
 <INITIAL>{tWhile}			%{ return 'tWhile'; %}
 <INITIAL>{tFor}				%{ return 'tFor'; %}
+<INITIAL>{tDefault}			%{ return 'tDefault'; %}
 
 
 <INITIAL>{booleano}			%{ return 'booleano'; %}
@@ -191,8 +194,12 @@ SENTENCIA
 		| INS_WHILE										{ $$ = $1; }
 		| INS_DOWHILE									{ $$ = $1; }
 		| INS_FOR										{ $$ = $1; }
+		| OPERADOR_TERNARIO								{ $$ = $1; }
 		| error { console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); }
 		;
+
+
+
 
 INS_FOR
 	: tFor parA DECLARACION_FOR EXP_LOGICA ptcoma MASMAS_MENOSMENOS parC llaveA LSENTENCIA llaveC 
@@ -224,7 +231,7 @@ CASOS
 CASO_EVALUAR 
 	: tCase EXP_LOGICA dospt LSENTENCIA { $$ = instruccionesAPI.nuevoCaso($2,$4, this._$.first_line, this._$.first_column); }
   	| tDefault dospt LSENTENCIA { $$ = instruccionesAPI.nuevoCasoDef($3, this._$.first_line, this._$.first_column); }
-;
+	;
 
 
 
@@ -276,6 +283,19 @@ _TIPO_DATO
 	;	
 
 
+OPERADOR_TERNARIO
+	: tLet identificador igual TERNARIO ptcoma							{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, undefined, $4, this._$.first_line, this._$.first_column)]); }	
+	| tLet identificador dospt TIPO_VARIABLE igual TERNARIO ptcoma		{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, $4, $6, this._$.first_line, this._$.first_column)]); }
+	| tConst identificador igual TERNARIO ptcoma						{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, undefined, $4, this._$.first_line, this._$.first_column)]); }
+	| tConst identificador dospt TIPO_VARIABLE igual TERNARIO ptcoma	{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, $4, $6, this._$.first_line, this._$.first_column)]); }
+	| identificador igual TERNARIO ptcoma								{ $$ = instruccionesAPI.nuevoVariable(undefined, [instruccionesAPI.nuevoAsignacion($1, $3, this._$.first_line, this._$.first_column)]); }
+	| tReturn TERNARIO ptcoma 											{ $$ = instruccionesAPI.nuevoTransferencia($1, $2, this._$.first_line, this._$.first_column); }
+	;
+	
+
+TERNARIO
+	: EXP_LOGICA interrogacionC EXP_LOGICA dospt EXP_LOGICA
+	{ $$ = instruccionesAPI.nuevoTernario($1, $3, $5, this._$.first_line, this._$.first_column); };
 
 VARIABLES
 	: tLet LISTA_ID ptcoma												{ $$ = instruccionesAPI.nuevoVariable($1, $2); }
@@ -313,7 +333,7 @@ EXP
 	| identificador				{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR, this._$.first_line, this._$.first_column); }
 	| parA EXP_LOGICA parC 		{ $$ = $2; }	
 	| LLAMADA					{ $$ = $1; }
-	| MASMAS_MENOSMENOS			{ $$ = $1; }
+	| MASMAS_MENOSMENOS			{ $$ = $1; }			
 	| error { console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); }
 	;
 /*
@@ -332,7 +352,7 @@ EXP_RELACIONAL
 	| EXP_RELACIONAL menigque EXP_RELACIONAL		{ $$ = instruccionesAPI.nuevoOperacionBinaria($1, $3, TIPO_OPERACION.MENOR_IGUAL, this._$.first_line, this._$.first_column); }
 	| EXP_RELACIONAL igig EXP_RELACIONAL			{ $$ = instruccionesAPI.nuevoOperacionBinaria($1, $3, TIPO_OPERACION.DOBLE_IGUAL, this._$.first_line, this._$.first_column); }
 	| EXP_RELACIONAL noig EXP_RELACIONAL			{ $$ = instruccionesAPI.nuevoOperacionBinaria($1, $3, TIPO_OPERACION.NO_IGUAL, this._$.first_line, this._$.first_column); }
-	| EXP											{ $$ = $1; }			
+	| EXP											{ $$ = $1; }		
 	;
 
 EXP_LOGICA
@@ -360,3 +380,5 @@ MASMAS_MENOSMENOS
 	: identificador masmas		{ $$ = instruccionesAPI.nuevoMasmas($1, this._$.first_line, this._$.first_column); }
 	| identificador menosmenos	{ $$ = instruccionesAPI.nuevoMenosmenos($1, this._$.first_line, this._$.first_column); }
 	;
+
+

@@ -66,6 +66,8 @@ const tIPO_INSTRUCCION = {
 	TRANSFERIR:		'TRANSFERIR',
 	MASMAS:			'MASMAS',
 	MENOSMENOS:		'MENOSMENOS',
+	TERNARIO:		'INS_TERNARIO',
+	VAR_TERNARIO:	'VAR_TERNARIO',
 }
 
 // Constantes para los tipos de OPCION_SWITCH validas en la gramática
@@ -406,6 +408,17 @@ const InstruccionesAPI = {
 			linea: linea,
 			columna: columna
 		}
+	},
+
+	nuevoTernario(logico, primero, segundo, linea, columna){
+		return{
+			tipo: tIPO_INSTRUCCION.TERNARIO,
+			expresionLogico: logico,
+			instruccionVerdadero: primero,
+			instruccionFalso: segundo,
+			linea: linea,
+			columna: columna
+		};
 	}
 
  

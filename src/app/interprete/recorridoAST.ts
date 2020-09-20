@@ -87,6 +87,18 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
 
 }
 
+
+
+function procesarOpTernario(instruccion, tablaDeSimbolos){
+  const valorCondicion = expLogica(instruccion.expresionLogico, tablaDeSimbolos);
+  if(valorCondicion){
+    return procesarcadena(instruccion.instruccionVerdadero, tablaDeSimbolos);
+  }else{
+    return procesarcadena(instruccion.instruccionFalso, tablaDeSimbolos);
+  }
+}
+
+
 function procesarFor(instruccion, tablaDeSimbolos, miTransferencia) {
   const tsFor = new TS(copiar(tablaDeSimbolos.simbolos), Terrores);
   if (instruccion.variable.tipo !== TIPO_VALOR.IDENTIFICADOR) {
@@ -103,6 +115,7 @@ function procesarFor(instruccion, tablaDeSimbolos, miTransferencia) {
       trans_for.flagCiclo = true;
       const tsPara = new TS(copiar(tsFor.simbolos), trans_for);
       listaInstruccion(instruccion.instruccion, tsPara, trans_for);
+
       if (trans_for.flagBreak || trans_for.flagReturn) {
         miTransferencia.expresion = trans_for.expresion;
         break;
@@ -114,9 +127,6 @@ function procesarFor(instruccion, tablaDeSimbolos, miTransferencia) {
 
 
 }
-
-
-
 
 function procesarDOwHILE(instruccion, tablaDeSimbolos, miTransferencia) {
   do {
@@ -477,6 +487,10 @@ function exprRelacional(expresion, tablaDeSimbolos) {
 
 
 function expAritmetica(expresultion: any, tablaDeSimbolos) {
+
+  if(expresultion.tipo === TIPO_INSTRUCCION.TERNARIO){
+    return procesarOpTernario(expresultion, tablaDeSimbolos);
+  }
   if (expresultion.tipo === TIPO_INSTRUCCION.MASMAS) {
     return masMas(expresultion, tablaDeSimbolos);
   }
