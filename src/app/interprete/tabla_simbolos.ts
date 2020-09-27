@@ -1,4 +1,5 @@
-
+export let tablSim = [];
+export let estado_tblsym = [];
 
 // Constantes para los tipos de datos.
 const tIPO_DATO = {
@@ -73,6 +74,7 @@ class TS {
             const nuevoSimbolo = crearSimbolo(tipo_decla, id, tipo, valor, ambito, linea, columna, parametro);
         this._simbolos.push(nuevoSimbolo);
         this._nuevoSimbolo.push(nuevoSimbolo);
+        tablSim.push(nuevoSimbolo);
         }else{
             this.Terrores.add("semantico", 'la variable -- '+id+' -- ya exixte', linea, columna);
         }
@@ -158,14 +160,18 @@ class TS {
     print() {
         this._simbolos.forEach(element => {
             console.log(element);
+            estado_tblsym.push(element);
         });
     }
 }
 
 // Exportamos las constantes y la clase.
-
 export const TIPO_DATO = tIPO_DATO;
 export { TS }
+export function resetTS(){
+    tablSim = [];
+    estado_tblsym = [];
+}
 
 
 

@@ -3,8 +3,7 @@ import { TIPO_OPERACION, TIPO_VALOR, TIPO_INSTRUCCION, instruccionesAPI, TIPO_OP
 import { TIPO_DATO, TS } from './tabla_simbolos';
 import { TE } from './tabla_errores';
 import { TRANSFERENCIA } from './transferencia';
-import { variable } from '@angular/compiler/src/output/output_ast';
-import { iif } from 'rxjs';
+
 
 
 let tsGlobal: TS;
@@ -20,7 +19,7 @@ function _main(AST) {
   salidaConsola = "";
   primerRecorrido(AST);
   segundoRecorrido(AST);
-  //tsGlobal.print();
+  tsGlobal.print();
   return Terrores.print() + salidaConsola;
 }
 
@@ -335,6 +334,7 @@ function procesarAsignacion(instruccion, tablaDeSimbolos) {
 }
 
 function procesarDeclaracion(instruccion, tablaDeSimbolos) { //aqui cambiamos para que acepte el tipo_dato de la declaracion
+  //console.log(_ambito);
   tablaDeSimbolos.agregar(
     instruccion.tipo_declaracion,
     instruccion.identificador,

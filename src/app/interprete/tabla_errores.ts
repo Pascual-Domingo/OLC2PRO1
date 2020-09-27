@@ -1,3 +1,6 @@
+export let errorSem = [];
+export let errorSin = [];
+export let errorLex = [];
 
 
 function Error(tipo, descripcion, linea, columna){
@@ -11,11 +14,17 @@ function Error(tipo, descripcion, linea, columna){
 
 export class TE{
     tblErrores = [];
-
+    semantico = [];
+    lexico = [];
+    
+   
     add(tipo, descripcion, linea, columna){
         const result = Error(tipo, descripcion, linea, columna);
         this.tblErrores.push(result);
+        errorSem.push(result);
     }
+
+
 
     print(){
         let allErrores = "";
@@ -30,3 +39,24 @@ export class TE{
     }
 }
 
+export class SINTACTOCO {
+    constructor(tipo, descripcion, linea, columna){
+        const result = Error(tipo, descripcion, linea, columna);
+        errorSin.push(result);
+    }
+
+}
+
+export class ERLEXICO {
+    constructor(tipo, descripcion, linea, columna){
+        const result = Error(tipo, descripcion, linea, columna);
+        errorLex.push(result);
+    }
+
+}
+
+export function resetTE(){
+    errorSem = [];
+    errorSin = [];
+    errorLex = [];
+}

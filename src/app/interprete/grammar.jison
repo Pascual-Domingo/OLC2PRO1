@@ -2,15 +2,19 @@
  /* segmento de codigo, es equivalente a la seccion parseCode que encontramos en CUP */
  /* aca podemos importar los módulos que vamos a utilizar, crear funciones, etc */
 %{
+	//import { TE } from './tabla_errores';
 	const TIPO_VALOR 		= require('./instrucciones').TIPO_VALOR;
 	const TIPO_DATO			= require('./tabla_simbolos').TIPO_DATO; //para jalar el tipo de dato
 	const TIPO_OPERACION	= require('./instrucciones').TIPO_OPERACION;
 	const instruccionesAPI	= require('./instrucciones').instruccionesAPI;
+	const { SINTACTOCO, ERLEXICO } = require('./tabla_errores');
+
 %}
 
 /*directivas léxicas y expresultiones regularesult | tokens */
+//%options flex case-insensitive   sensible a mayusculas y minusculas
 %lex
-%options flex case-insensitive
+%options flex case-sensitive
 %option yylineno
 %locations
 
@@ -141,7 +145,9 @@ tFor			"for"
 "\n"  	{ }
 
 <<EOF>>		          return 'EOF' //fin de cadena
-
+.			{ 	console.error('Este es un error léxico: ' + yytext + ', en la linea: ' + yylloc.first_line + ', en la columna: ' + yylloc.first_column); 
+				new ERLEXICO('Este es un error léxico', yytext, yylloc.first_line, yylloc.first_column);
+			}
 /lex
 
 /*asociatividad y precedencia para los operadores*/
@@ -195,7 +201,9 @@ SENTENCIA
 		| INS_DOWHILE									{ $$ = $1; }
 		| INS_FOR										{ $$ = $1; }
 		| OPERADOR_TERNARIO								{ $$ = $1; }
-		| error { console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); }
+		| error { //console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); 
+					new SINTACTOCO("este es un error sintactico", yytext, this._$.first_line , this._$.first_column);
+				}
 		;
 
 
@@ -334,7 +342,7 @@ EXP
 	| parA EXP_LOGICA parC 		{ $$ = $2; }	
 	| LLAMADA					{ $$ = $1; }
 	| MASMAS_MENOSMENOS			{ $$ = $1; }			
-	| error { console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); }
+	| error { new SINTACTOCO("este es un error sintactico", yytext, this._$.first_line , this._$.first_column); }
 	;
 /*
 EXP_CADENA

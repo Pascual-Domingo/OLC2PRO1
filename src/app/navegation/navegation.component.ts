@@ -1,4 +1,8 @@
+//import { Route } from '@angular/compiler/src/core';
+import {Router} from '@angular/router'
 import { Component, OnInit } from '@angular/core';
+import { TE, errorSin, errorLex, errorSem } from '../interprete/tabla_errores';
+import {ServisService} from '../servis.service';
 
 @Component({
   selector: 'app-navegation',
@@ -7,7 +11,18 @@ import { Component, OnInit } from '@angular/core';
 })
 export class NavegationComponent implements OnInit {
 
-  constructor() { }
+/*
+lexico = errorLex;
+sintactico = errorSin;
+semantico = errorSem;
+*/
+errores = {
+  milex: errorLex,
+  misintac: errorSin,
+  miseman: errorSem
+}
+
+  constructor(private miservis:ServisService, private router:Router) { }
 
   ngOnInit(): void {
 
@@ -28,15 +43,18 @@ export class NavegationComponent implements OnInit {
   }
 
   btnReportes() {
-    window.alert("boton reportes");
+    this.miservis.reporte_errores = this.errores;
+    this.router.navigate(['/reportes']); 
+    
   }
 
   btnTablaSimbolo() {
-    window.alert("boton tabla de simbolos");
+    //this.miservis.reporte_errores = this.errores;
+    this.router.navigate(['/tblsimbolos']);
   }
 
   btnGraficar() {
-    window.alert("boton AST");
+    
   }
 
 }

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-
+import { TE, errorSin, errorLex, errorSem } from '../interprete/tabla_errores';
 @Component({
   selector: 'app-graficar',
   templateUrl: './graficar.component.html',
@@ -10,6 +10,7 @@ export class GraficarComponent implements OnInit {
   constructor() { }
 
   ngOnInit(): void {
+    console.log(errorLex);
   }
 
 }

@@ -1,15 +1,9 @@
-/*
-function pr2(a, b) {  
-    return a + b;
-  }
-
-export const prb = pr2;
-
-*/
-
-import { identifierModuleUrl } from '@angular/compiler';
 
 //ng build --base--href https://Pascual-Domingo.github.io/OLC2PRO1/
+//jcarlosmaeda@gmail.com
+let errorSemantico = [];
+
+
 
 // Constantes para los tipos de 'valoresult' que reconoce nuestra gramática.
 const tIPO_VALOR = {
@@ -99,7 +93,7 @@ function nuevaOperacion(operandoIzq, operandoDer, tipo, linea, columna) {
  * El objetivo de esta API es proveer las funciones necesarias para la construcción de operaciones e instrucciones.
  */
 const InstruccionesAPI = {
-
+	
 	/**
 	 * Crea un nuevo objeto tipo Operación para las operaciones binarias válidas.
 	 * @param {*} operandoIzq 

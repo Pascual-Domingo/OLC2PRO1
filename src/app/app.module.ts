@@ -8,13 +8,17 @@ import { TraductorComponent } from './traductor/traductor.component';
 import { GraficarComponent } from './graficar/graficar.component';
 import { FormsModule } from '@angular/forms';
 import { CodemirrorModule } from '@ctrl/ngx-codemirror';
+import { ReportesComponent } from './reportes/reportes.component';
+import { TblsimbolosComponent } from './tblsimbolos/tblsimbolos.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     NavegationComponent,
     TraductorComponent,
-    GraficarComponent
+    GraficarComponent,
+    ReportesComponent,
+    TblsimbolosComponent
   ],
   imports: [
     BrowserModule,

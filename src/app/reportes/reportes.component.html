@@ -1,0 +1,87 @@
+<div class="container">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <button type="button" class="btn btn-outline-secondary" (click)="btnLexico()">lexicos</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="btnSintactico()">sintacticos</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="btnSemantico()">semanticos</button>
+  </nav>
+  <br>
+
+  <div *ngIf = flagLexico>
+    <h4> {{tipoerror}} </h4>
+    <table class="table">
+      <thead class="thead-light">
+        <tr>
+          <th scope="col">No</th>
+          <th scope="col">tipo</th>
+          <th scope="col">descripcion</th>
+          <th scope="col">linea</th>
+          <th scope="col">columna</th>
+        </tr>
+      </thead>
+      <tbody *ngFor="let item of milex; let i = index">
+
+        <tr>
+          <th scope="row">{{i}}</th>
+          <td>{{item.tipo}}</td>
+          <td>{{item.descripcion}}</td>
+          <td>{{item.linea}}</td>
+          <td>{{item.columna}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf = flagsintactico>
+    <h4> {{tipoerror}} </h4>
+    <table class="table">
+      <thead class="thead-light">
+        <tr>
+          <th scope="col">No</th>
+          <th scope="col">tipo</th>
+          <th scope="col">descripcion</th>
+          <th scope="col">linea</th>
+          <th scope="col">columna</th>
+        </tr>
+      </thead>
+      <tbody *ngFor="let item of misintac; let i = index">
+
+        <tr>
+          <th scope="row">{{i}}</th>
+          <td>{{item.tipo}}</td>
+          <td>{{item.descripcion}}</td>
+          <td>{{item.linea}}</td>
+          <td>{{item.columna}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf = flagSemantico>
+    <h4> {{tipoerror}} </h4>
+    <table class="table">
+      <thead class="thead-light">
+        <tr>
+          <th scope="col">No</th>
+          <th scope="col">tipo</th>
+          <th scope="col">descripcion</th>
+          <th scope="col">linea</th>
+          <th scope="col">columna</th>
+        </tr>
+      </thead>
+      <tbody *ngFor="let item of miseman; let i = index">
+
+        <tr>
+          <th scope="row">{{i}}</th>
+          <td>{{item.tipo}}</td>
+          <td>{{item.descripcion}}</td>
+          <td>{{item.linea}}</td>
+          <td>{{item.columna}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
+
+
+</div>
