@@ -1,6 +1,9 @@
-
+// npx angular-cli-ghpages-dir =dis/OLC2PRO1
+// ng build --prod --base-href https://Pascual-Domingo.github.io/OLC2PRO1/
 //ng build --base--href https://Pascual-Domingo.github.io/OLC2PRO1/
 //jcarlosmaeda@gmail.com
+
+//  ng deploy --base-href=https://Pascual-Domingo.github.io/OLC2PRO1/
 let errorSemantico = [];
 
 
@@ -62,6 +65,9 @@ const tIPO_INSTRUCCION = {
 	MENOSMENOS:		'MENOSMENOS',
 	TERNARIO:		'INS_TERNARIO',
 	VAR_TERNARIO:	'VAR_TERNARIO',
+	ASIGNACON_VEC:	'ASIGNACON_VEC',
+	ACCESO_VEC:		'ACCESO_VEC',
+	SET_VEC:		'SET_VEC'	
 }
 
 // Constantes para los tipos de OPCION_SWITCH validas en la gramática
@@ -410,6 +416,32 @@ const InstruccionesAPI = {
 			expresionLogico: logico,
 			instruccionVerdadero: primero,
 			instruccionFalso: segundo,
+			linea: linea,
+			columna: columna
+		};
+	},
+	nuevoAsigVec(expresion){
+		return {
+			tipo: tIPO_INSTRUCCION.ASIGNACON_VEC,
+			expresion: expresion
+		}
+	},
+
+	nuevoAcceso( id, expresion, linea, columna){
+		return{
+			tipo: tIPO_INSTRUCCION.ACCESO_VEC,
+			identificador: id,
+			expresion: expresion,
+			linea: linea,
+			columna: columna
+		};
+	},
+
+	nuevoValorArray( setArray, getArray, linea, columna){
+		return{
+			tipo: tIPO_INSTRUCCION.SET_VEC,
+			setVector: setArray,
+			getVector: getArray,
 			linea: linea,
 			columna: columna
 		};

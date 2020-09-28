@@ -10,9 +10,10 @@ let tsGlobal: TS;
 let Terrores: TE;
 let transferir = new TRANSFERENCIA(false);
 let salidaConsola = "";
-let _ambito = "global";
+let _ambito;
 
 function _main(AST) {
+  _ambito = "global";
   console.log(AST);
   Terrores = new TE();
   tsGlobal = new TS([], Terrores);
@@ -76,6 +77,8 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
       try { procesarDOwHILE(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
     } else if (instruccion[i].tipo === TIPO_INSTRUCCION.INS_FOR) {
       try { procesarFor(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.SET_VEC) { //setear vector/array
+      try { modificarArray(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
     }
 
 
@@ -86,13 +89,30 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
 
 }
 
+function modificarArray(instruccion, tablaDeSimbolos, miTransferencia){
+  
+  const getVec = procesarcadena(instruccion.getVector, tablaDeSimbolos);
+  const setVec = tablaDeSimbolos.obtener(instruccion.setVector.identificador, 0, 0);
+  const posicion = expAritmetica(instruccion.setVector.expresion, tablaDeSimbolos);
 
-
-function procesarOpTernario(instruccion, tablaDeSimbolos){
-  const valorCondicion = expLogica(instruccion.expresionLogico, tablaDeSimbolos);
-  if(valorCondicion){
-    return procesarcadena(instruccion.instruccionVerdadero, tablaDeSimbolos);
+  if(posicion.tipo === TIPO_DATO.NUMERO){
+    if(getVec.tipo === setVec.tipo){
+      setVec.valor[posicion.valor] = getVec.valor;
+      const new_valor = { valor: setVec.valor, tipo: setVec.tipo }
+      tablaDeSimbolos.actualizar(setVec.id, new_valor, instruccion.linea, instruccion.columna);
+    }else{
+      Terrores.add("error semantico", ' el array es de tipo ' + setVec.tipo + ' y el valor a asignar es de tipo '+ getVec.tipo, setVec.linea, setVec.columna);
+    }
   }else{
+    Terrores.add("error semantico", ' solo se acepta NUMERO en las posiciones de arrays, esta intentado usar '+ setVec.tipo, setVec.linea, setVec.columna);
+  }
+}
+
+function procesarOpTernario(instruccion, tablaDeSimbolos) {
+  const valorCondicion = expLogica(instruccion.expresionLogico, tablaDeSimbolos);
+  if (valorCondicion) {
+    return procesarcadena(instruccion.instruccionVerdadero, tablaDeSimbolos);
+  } else {
     return procesarcadena(instruccion.instruccionFalso, tablaDeSimbolos);
   }
 }
@@ -320,6 +340,32 @@ function masMas(instruccion, tablaDeSimbolos) {
   return valor;
 }
 
+function procesarArray(instruccion, tablaDeSimbolos) {
+  let array: any[] = [];
+  //console.log(instruccion);
+  const elementos = instruccion.expresion.expresion;
+  const sym = tablaDeSimbolos.obtener(instruccion.identificador, instruccion.linea, instruccion.columna);
+  //console.log(sym);
+  if (elementos === undefined) {
+    const new_valor = { valor: array, tipo: sym.tipo }
+    tablaDeSimbolos.actualizar(sym.id, new_valor, instruccion.linea, instruccion.columna);
+  }
+  for (let index = 0; index < elementos.length; index++) {
+    const element = elementos[index];
+    const valor = procesarcadena(element, tablaDeSimbolos);
+    //console.log(valor);
+    if (valor.tipo === sym.tipo) {
+      array.push(valor.valor); //gurada elementos del array
+    } else {
+      Terrores.add("semantico", 'elemento ' + valor.tipo + ' no valido, el array es de tipo ' + sym.tipo, instruccion.linea, instruccion.columna);
+    }
+  }
+
+    const new_valor = { valor: array, tipo: sym.tipo }
+    tablaDeSimbolos.actualizar(sym.id, new_valor, instruccion.linea, instruccion.columna);
+
+}
+
 function menosMenos(instruccion, tablaDeSimbolos) {
   const sym = tablaDeSimbolos.obtener(instruccion.identificador, instruccion.linea, instruccion.columna);
   const valor = { valor: sym.valor - 1, tipo: sym.tipo }
@@ -329,12 +375,16 @@ function menosMenos(instruccion, tablaDeSimbolos) {
 }
 
 function procesarAsignacion(instruccion, tablaDeSimbolos) {
-  const valor = procesarcadena(instruccion.expresion, tablaDeSimbolos); //aqui quiero que retorne: tipo y valor
-  tablaDeSimbolos.actualizar(instruccion.identificador, valor, instruccion.linea, instruccion.columna);
+  if (instruccion.expresion.tipo === TIPO_INSTRUCCION.ASIGNACON_VEC || instruccion.expresion === undefined) {
+    procesarArray(instruccion, tablaDeSimbolos);
+  } else {
+    const valor = procesarcadena(instruccion.expresion, tablaDeSimbolos); //aqui quiero que retorne: tipo y valor
+    tablaDeSimbolos.actualizar(instruccion.identificador, valor, instruccion.linea, instruccion.columna);
+  }
 }
 
 function procesarDeclaracion(instruccion, tablaDeSimbolos) { //aqui cambiamos para que acepte el tipo_dato de la declaracion
-  //console.log(_ambito);
+  //console.log(instruccion);
   tablaDeSimbolos.agregar(
     instruccion.tipo_declaracion,
     instruccion.identificador,
@@ -487,8 +537,23 @@ function exprRelacional(expresion, tablaDeSimbolos) {
 
 
 function expAritmetica(expresultion: any, tablaDeSimbolos) {
+  
+  if(expresultion.tipo === TIPO_INSTRUCCION.ACCESO_VEC){
+    //console.log(expresultion);
+    const sym = tablaDeSimbolos.obtener(expresultion.identificador, 0, 0);
+    const posicion = expAritmetica(expresultion.expresion, tablaDeSimbolos);
+    //console.log(posicion);
+    if(posicion.tipo === TIPO_DATO.NUMERO){
+        const result = { valor: sym.valor[posicion.valor], tipo: sym.tipo };
+        return result;
+    }else{
+      Terrores.add("semantico", 'se esperaban expresiones numericas para acceder al array: ' + expresultion.identificador, expresultion.linea, expresultion.columna);
+    }
+    
+    
+  }
 
-  if(expresultion.tipo === TIPO_INSTRUCCION.TERNARIO){
+  if (expresultion.tipo === TIPO_INSTRUCCION.TERNARIO) {
     return procesarOpTernario(expresultion, tablaDeSimbolos);
   }
   if (expresultion.tipo === TIPO_INSTRUCCION.MASMAS) {

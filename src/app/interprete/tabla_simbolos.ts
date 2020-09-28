@@ -160,9 +160,11 @@ class TS {
     print() {
         this._simbolos.forEach(element => {
             console.log(element);
-            estado_tblsym.push(element);
+            //tablSim.push(element);
         });
     }
+
+
 }
 
 // Exportamos las constantes y la clase.

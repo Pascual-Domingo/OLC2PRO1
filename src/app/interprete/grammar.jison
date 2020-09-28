@@ -53,6 +53,8 @@ or				"||"
 masmas			"++"
 menosmenos		"--"
 interrogacionC	"?"
+corchA			"["
+corchC			"]"
 
 
 tDo				"do"
@@ -105,6 +107,8 @@ tFor			"for"
 <INITIAL>{masmas}			%{ return 'masmas'; %}
 <INITIAL>{menosmenos}		%{ return 'menosmenos'; %}
 <INITIAL>{interrogacionC}	%{ return 'interrogacionC'; %}
+<INITIAL>{corchA}			%{ return 'corchA'; %}
+<INITIAL>{corchC}			%{ return 'corchC'; %}
 
 
 <INITIAL>{tDo}				%{ return 'tDo'; %}
@@ -201,6 +205,7 @@ SENTENCIA
 		| INS_DOWHILE									{ $$ = $1; }
 		| INS_FOR										{ $$ = $1; }
 		| OPERADOR_TERNARIO								{ $$ = $1; }
+		| ACCESOARRAY igual EXP_LOGICA ptcoma			{ $$ = instruccionesAPI.nuevoValorArray($1, $3, this._$.first_line , this._$.first_column); }
 		| error { //console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); 
 					new SINTACTOCO("este es un error sintactico", yytext, this._$.first_line , this._$.first_column);
 				}
@@ -324,6 +329,19 @@ IDENT
 	| identificador dospt TIPO_VARIABLE igual EXP_LOGICA	{ $$ = instruccionesAPI.nuevoDeclaracionAsignacion($1, $3, $5, this._$.first_line, this._$.first_column); }
 	;
 
+ASIGARRAY : corchA LISEXP corchC	{ $$ = $2; } ;
+
+LISEXP
+	: LISEXP coma EXP_LOGICA	{ $1.push($3); $$ = $1; }
+	| EXP_LOGICA				{ $$ = [$1]; }
+	|
+	;
+
+ACCESOARRAY
+	: identificador corchA EXP corchC 
+	{ $$ = instruccionesAPI.nuevoAcceso($1, $3, this._$.first_line , this._$.first_column); }
+	;
+
 EXP
 	: EXP mas EXP				{ $$ = instruccionesAPI.nuevoOperacionBinaria($1, $3, TIPO_OPERACION.SUMA, this._$.first_line, this._$.first_column); }
 	| EXP menos EXP 			{ $$ = instruccionesAPI.nuevoOperacionBinaria($1, $3, TIPO_OPERACION.RESTA, this._$.first_line, this._$.first_column); }
@@ -341,7 +359,9 @@ EXP
 	| identificador				{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR, this._$.first_line, this._$.first_column); }
 	| parA EXP_LOGICA parC 		{ $$ = $2; }	
 	| LLAMADA					{ $$ = $1; }
-	| MASMAS_MENOSMENOS			{ $$ = $1; }			
+	| MASMAS_MENOSMENOS			{ $$ = $1; }	
+	| ASIGARRAY					{ $$ = instruccionesAPI.nuevoAsigVec($1); }
+	| ACCESOARRAY				{ $$ = $1; }
 	| error { new SINTACTOCO("este es un error sintactico", yytext, this._$.first_line , this._$.first_column); }
 	;
 /*
@@ -371,9 +391,10 @@ EXP_LOGICA
 	;
 
 TIPO_VARIABLE
-	: tString		{ $$ = TIPO_DATO.STRIN; }
+	: tString		{ $$ = TIPO_DATO.STRING; }
 	| tNumber		{ $$ = TIPO_DATO.NUMERO; }
-	| tBoolean		{ $$ = TIPO_DATO.BOOLENO; }
+	| tBoolean		{ $$ = TIPO_DATO.BOOLEANO; }
+	| TIPO_VARIABLE corchA corchC	{ $$= $1; }
 	| identificador	{ $$ = $1; }
 	;
 
