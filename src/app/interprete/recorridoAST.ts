@@ -205,10 +205,14 @@ function procesarSwitch(instruccion, tablaDeSimbolos, miTransferencia) {
     } else {
       if (evaluar)
         listaInstruccion(lscasos[index].instrucciones, tsSwitch, trans_switch);
+        if (trans_switch.flagReturn || trans_switch.flagBreak) break;
     }
   }
 
-  if (trans_switch.flagReturn) miTransferencia.expresion = trans_switch.expresion;
+  if (trans_switch.flagReturn){ 
+    miTransferencia.expresion = trans_switch.expresion;
+    miTransferencia.flagReturn = trans_switch.flagReturn;
+  }
 
 
   /*

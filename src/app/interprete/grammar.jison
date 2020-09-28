@@ -185,6 +185,7 @@ CUERPO
 								var pila = eval('$$');
 								$$ = instruccionesAPI.nuevoCuerpo(pila[pila.length-1], undefined);
 							}
+	| error { new SINTACTOCO("este es un error sintactico", yytext, this._$.first_line , this._$.first_column); }
 	;
 
 INSTRUCCION
