@@ -20,7 +20,7 @@ function _main(AST) {
   salidaConsola = "";
   primerRecorrido(AST);
   segundoRecorrido(AST);
-  tsGlobal.print();
+  //tsGlobal.print();
   return Terrores.print() + salidaConsola;
 }
 
@@ -79,6 +79,8 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
       try { procesarFor(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
     } else if (instruccion[i].tipo === TIPO_INSTRUCCION.SET_VEC) { //setear vector/array
       try { modificarArray(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
+    }else if (instruccion[i].tipo === TIPO_INSTRUCCION.IMPRIMIR_ARRAY) { //setear vector/array
+      try { printArrayConsole(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
     }
 
 
@@ -87,6 +89,15 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
 
   }
 
+}
+
+function printArrayConsole(instruccion, tablaDeSimbolos, miTransferencia){
+  const cadena = procesarcadena(instruccion.expresion, tablaDeSimbolos); //cadena entrada
+  const miArray = procesarcadena(instruccion.identificador, tablaDeSimbolos);
+  salidaConsola += cadena.valor + " \n";
+  (miArray.valor).forEach(element => {
+    salidaConsola += "     "+element+"\n"
+  });
 }
 
 function modificarArray(instruccion, tablaDeSimbolos, miTransferencia){
@@ -537,7 +548,12 @@ function exprRelacional(expresion, tablaDeSimbolos) {
 
 
 function expAritmetica(expresultion: any, tablaDeSimbolos) {
-  
+  if(expresultion.tipo === TIPO_INSTRUCCION.MILENGTH){
+    expresultion.tipo = TIPO_VALOR.IDENTIFICADOR;
+    const result = expAritmetica(expresultion, tablaDeSimbolos);
+    return {valor: result.valor.length, tipo: TIPO_DATO.NUMERO };
+  }
+
   if(expresultion.tipo === TIPO_INSTRUCCION.ACCESO_VEC){
     //console.log(expresultion);
     const sym = tablaDeSimbolos.obtener(expresultion.identificador, 0, 0);
@@ -549,7 +565,6 @@ function expAritmetica(expresultion: any, tablaDeSimbolos) {
     }else{
       Terrores.add("semantico", 'se esperaban expresiones numericas para acceder al array: ' + expresultion.identificador, expresultion.linea, expresultion.columna);
     }
-    
     
   }
 

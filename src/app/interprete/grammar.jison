@@ -37,6 +37,7 @@ parA 			"("
 parC 			")"
 llaveA			"{"
 llaveC			"}"
+punto 			"."
 ptcoma			";"
 dospt			":"
 coma			","
@@ -76,6 +77,7 @@ tCase			"case"
 tDefault		"default"
 tWhile			"while"
 tFor			"for"
+tLength			"length"
 
 
 %x INITIAL
@@ -100,6 +102,7 @@ tFor			"for"
 <INITIAL>{noig}				%{ return 'noig'; %}
 <INITIAL>{modular}			%{ return 'modular'; %}
 <INITIAL>{exponente}		%{ return 'exponente'; %}
+<INITIAL>{punto}			%{ return 'punto'; %}
 <INITIAL>{dospt}			%{ return 'dospt'; %}
 <INITIAL>{coma}				%{ return 'coma'; %}
 <INITIAL>{and}				%{ return 'and'; %}
@@ -130,6 +133,7 @@ tFor			"for"
 <INITIAL>{tWhile}			%{ return 'tWhile'; %}
 <INITIAL>{tFor}				%{ return 'tFor'; %}
 <INITIAL>{tDefault}			%{ return 'tDefault'; %}
+<INITIAL>{tLength}			%{ return 'tLength'; %}
 
 
 <INITIAL>{booleano}			%{ return 'booleano'; %}
@@ -194,7 +198,8 @@ LSENTENCIA
 	;
 
 SENTENCIA
-		: timprimir parA EXP_LOGICA parC ptcoma			{ $$ = instruccionesAPI.nuevoImprimir($3, this._$.first_line, this._$.first_column ); }
+		: timprimir parA EXP_LOGICA parC ptcoma							{ $$ = instruccionesAPI.nuevoImprimir($3, this._$.first_line, this._$.first_column ); }
+		| timprimir parA EXP_LOGICA coma EXP_LOGICA parC ptcoma			{ $$ = instruccionesAPI.nuevoImprimirArray($3, $5, this._$.first_line, this._$.first_column ); }
 		| SENTENCIA_IF									{ $$ = $1; }
 		| VARIABLES										{ $$ = $1; }
 		| LLAMADA ptcoma								{ $$ = $1; }
@@ -357,6 +362,7 @@ EXP
 	| cadena3					{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA, this._$.first_line, this._$.first_column); }
 	| booleano					{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.BOOLEANO, this._$.first_line, this._$.first_column); }
 	| identificador				{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR, this._$.first_line, this._$.first_column); }
+	| identificador punto tLength	{ $$ = instruccionesAPI.nuevoLength($1, this._$.first_line, this._$.first_column ); }
 	| parA EXP_LOGICA parC 		{ $$ = $2; }	
 	| LLAMADA					{ $$ = $1; }
 	| MASMAS_MENOSMENOS			{ $$ = $1; }	

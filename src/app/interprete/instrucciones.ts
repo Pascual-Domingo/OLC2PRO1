@@ -44,6 +44,7 @@ const tIPO_OPERACION = {
 // Constantes para los tipos de 'instrucciones' válidas en nuestra gramática.
 const tIPO_INSTRUCCION = {
 	IMPRIMIR:		'INSTR_IMPRIMIR',
+	IMPRIMIR_ARRAY:	'IMPRIMIR_ARRAY',
 	INS_WHILE:		'INSTR_WHILE',
 	INS_DOWHILE:	'INSTR_DOWHILE',
 	DECLARACION:	'INSTR_DECLARACION',
@@ -67,7 +68,8 @@ const tIPO_INSTRUCCION = {
 	VAR_TERNARIO:	'VAR_TERNARIO',
 	ASIGNACON_VEC:	'ASIGNACON_VEC',
 	ACCESO_VEC:		'ACCESO_VEC',
-	SET_VEC:		'SET_VEC'	
+	SET_VEC:		'SET_VEC',
+	MILENGTH:		'MILENGTH'	
 }
 
 // Constantes para los tipos de OPCION_SWITCH validas en la gramática
@@ -141,6 +143,16 @@ const InstruccionesAPI = {
 		return {
 			tipo: TIPO_INSTRUCCION.IMPRIMIR,
 			expresion: expresultionCadena,
+			linea: linea,
+			columna: columna
+		};
+	},
+
+	nuevoImprimirArray: function(expresion, id, linea, columna) {
+		return {
+			tipo: TIPO_INSTRUCCION.IMPRIMIR_ARRAY,
+			expresion: expresion,
+			identificador: id,
 			linea: linea,
 			columna: columna
 		};
@@ -442,6 +454,15 @@ const InstruccionesAPI = {
 			tipo: tIPO_INSTRUCCION.SET_VEC,
 			setVector: setArray,
 			getVector: getArray,
+			linea: linea,
+			columna: columna
+		};
+	},
+
+	nuevoLength(id, linea, columna){
+		return {
+			tipo: TIPO_INSTRUCCION.MILENGTH,
+			valor: id,
 			linea: linea,
 			columna: columna
 		};
