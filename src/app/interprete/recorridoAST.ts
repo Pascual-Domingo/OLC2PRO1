@@ -94,10 +94,18 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
 function printArrayConsole(instruccion, tablaDeSimbolos, miTransferencia){
   const cadena = procesarcadena(instruccion.expresion, tablaDeSimbolos); //cadena entrada
   const miArray = procesarcadena(instruccion.identificador, tablaDeSimbolos);
-  salidaConsola += cadena.valor + " \n";
-  (miArray.valor).forEach(element => {
-    salidaConsola += "     "+element+"\n"
-  });
+  salidaConsola += cadena.valor + "  [ ";
+  for (let index = 0; index < (miArray.valor).length; index++) {
+    const element = (miArray.valor)[index];
+      if(index == (miArray.valor).length-1 ){
+        salidaConsola += element+" ]";
+        break;
+      }
+      salidaConsola += element+", ";
+  }
+
+  salidaConsola += "\n";
+ 
 }
 
 function modificarArray(instruccion, tablaDeSimbolos, miTransferencia){
@@ -489,7 +497,7 @@ function expLogica(expresion, tablaDeSimbolos) {
     Terrores.add("semantico", 'se esperaban expresiones booleanas para ejecutar la: ' + expresion.tipo, expresion.linea, expresion.columna);
     return;
   }
-  if (expresion.tipo === TIPO_OPERACION.OR) {
+  if (expresion.tipo === TIPO_OPERACION.OR)  {
     // En este caso necesitamos procesar los operandos para ||.
     const valorIzq = expLogica(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
     const valorDer = expLogica(expresion.operandoDer, tablaDeSimbolos);      // resolvemos el operando derecho.
@@ -518,6 +526,7 @@ function exprRelacional(expresion, tablaDeSimbolos) {
     // En este caso necesitamos procesar los operandos antes de realizar la comparación.
     let valorIzq = expAritmetica(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
     let valorDer = expAritmetica(expresion.operandoDer, tablaDeSimbolos);      // resolvemos el operando derecho.
+   
     if (valorIzq.tipo !== TIPO_DATO.NUMERO || valorDer.tipo !== TIPO_DATO.NUMERO) {
       Terrores.add("semantico", 'se esperaban expresiones numericas para ejecutar la: ' + expresion.tipo, expresion.linea, expresion.columna);
     } else {
@@ -525,6 +534,7 @@ function exprRelacional(expresion, tablaDeSimbolos) {
       valorDer = valorDer.valor;
     }
 
+    console.log(valorIzq +"  <   "+valorDer);
     if (expresion.tipo === TIPO_OPERACION.MAYOR_QUE) return valorIzq > valorDer;
     if (expresion.tipo === TIPO_OPERACION.MENOR_QUE) return valorIzq < valorDer;
     if (expresion.tipo === TIPO_OPERACION.MAYOR_IGUAL) return valorIzq >= valorDer;
@@ -553,9 +563,11 @@ function exprRelacional(expresion, tablaDeSimbolos) {
 
 function expAritmetica(expresultion: any, tablaDeSimbolos) {
   if(expresultion.tipo === TIPO_INSTRUCCION.MILENGTH){
+    console.log(expresultion);
     expresultion.tipo = TIPO_VALOR.IDENTIFICADOR;
     const result = expAritmetica(expresultion, tablaDeSimbolos);
-    return {valor: result.valor.length, tipo: TIPO_DATO.NUMERO };
+    console.log(result.valor.length);
+    return {valor: 8, tipo: TIPO_DATO.NUMERO }
   }
 
   if(expresultion.tipo === TIPO_INSTRUCCION.ACCESO_VEC){

@@ -77,7 +77,7 @@ tCase			"case"
 tDefault		"default"
 tWhile			"while"
 tFor			"for"
-tLength			"length"
+tLength			".length"
 
 
 %x INITIAL
@@ -185,7 +185,6 @@ CUERPO
 								var pila = eval('$$');
 								$$ = instruccionesAPI.nuevoCuerpo(pila[pila.length-1], undefined);
 							}
-	| error { new SINTACTOCO("este es un error sintactico", yytext, this._$.first_line , this._$.first_column); }
 	;
 
 INSTRUCCION
@@ -363,10 +362,10 @@ EXP
 	| cadena3					{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA, this._$.first_line, this._$.first_column); }
 	| booleano					{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.BOOLEANO, this._$.first_line, this._$.first_column); }
 	| identificador				{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR, this._$.first_line, this._$.first_column); }
-	| identificador punto tLength	{ $$ = instruccionesAPI.nuevoLength($1, this._$.first_line, this._$.first_column ); }
 	| parA EXP_LOGICA parC 		{ $$ = $2; }	
 	| LLAMADA					{ $$ = $1; }
 	| MASMAS_MENOSMENOS			{ $$ = $1; }	
+	| LENGTHARRAY				{ $$ = $1; }
 	| ASIGARRAY					{ $$ = instruccionesAPI.nuevoAsigVec($1); }
 	| ACCESOARRAY				{ $$ = $1; }
 	| error { new SINTACTOCO("este es un error sintactico", yytext, this._$.first_line , this._$.first_column); }
@@ -417,4 +416,7 @@ MASMAS_MENOSMENOS
 	| identificador menosmenos	{ $$ = instruccionesAPI.nuevoMenosmenos($1, this._$.first_line, this._$.first_column); }
 	;
 
+
+LENGTHARRAY
+	: identificador tLength	{ $$ = instruccionesAPI.nuevoLength($1, this._$.first_line, this._$.first_column ); };
 
