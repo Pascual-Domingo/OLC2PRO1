@@ -32,7 +32,7 @@ export class ReportesComponent implements OnInit {
     this.tipoerror = "error lexico";
     this.btnDeshabilitar();
     this.flagLexico = true;
-    console.log(errorLex);
+    
     
   }
 
@@ -40,14 +40,14 @@ export class ReportesComponent implements OnInit {
     this.tipoerror = "error sintactico";
     this.btnDeshabilitar();
     this.flagsintactico = true;
-    console.log(errorSin);
+    
   }
 
   btnSemantico() {
     this.tipoerror = "error semantico";
     this.btnDeshabilitar();
     this.flagSemantico = true;
-    console.log(errorSem);
+   
   }
 
   btnDeshabilitar() {

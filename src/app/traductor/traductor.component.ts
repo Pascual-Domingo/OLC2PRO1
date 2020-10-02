@@ -14,7 +14,10 @@ export class TraductorComponent implements OnInit {
   txtEntrada = "";
   txtConsola = "";
   txtEjecutar = "";
+  flagConsole:boolean = true;
+  flagGraficarTS:boolean = false;
 
+  graficarTS;
 
   AST: any;
 
@@ -46,6 +49,18 @@ export class TraductorComponent implements OnInit {
 
   btnEjecutar() {
 
+  }
+
+  btnConsola(){
+    this.flagConsole = true;
+    this.flagGraficarTS = false;
+  }
+
+  btnGraficarTS(){
+    this.flagGraficarTS = true;
+    this.flagConsole = false;
+    this.graficarTS = interprete.graficarTS;
+    //console.log(interprete.graficarTS);
   }
 
 }

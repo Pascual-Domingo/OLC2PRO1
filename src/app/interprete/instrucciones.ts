@@ -4,7 +4,7 @@
 //jcarlosmaeda@gmail.com
 
 //  ng deploy --base-href=https://Pascual-Domingo.github.io/OLC2PRO1/
-let errorSemantico = [];
+
 
 
 
@@ -39,6 +39,7 @@ const tIPO_OPERACION = {
 
 	CONCATENACION:  'OP_CONCATENACION',
 	TRANSFERIR:		'TRANSFERIR',
+	MILENGTH:		'MILENGTH',
 };
 
 // Constantes para los tipos de 'instrucciones' válidas en nuestra gramática.
@@ -69,7 +70,10 @@ const tIPO_INSTRUCCION = {
 	ASIGNACON_VEC:	'ASIGNACON_VEC',
 	ACCESO_VEC:		'ACCESO_VEC',
 	SET_VEC:		'SET_VEC',
-	MILENGTH:		'MILENGTH'	
+	MILENGTH:		'MILENGTH',
+	GRAFICARTS:		'GRAFICARTS',
+	MIPOP:			'MIPOP',
+	MIPUSH:			'MIPUSH',	
 }
 
 // Constantes para los tipos de OPCION_SWITCH validas en la gramática
@@ -460,12 +464,38 @@ const InstruccionesAPI = {
 	},
 
 	nuevoLength(id, linea, columna){
+		
 		return {
 			tipo: TIPO_INSTRUCCION.MILENGTH,
 			valor: id,
 			linea: linea,
-			columna: columna
+			columna: columna,
 		};
+	},
+	
+	nuevoGraficarTS(){
+		return {
+			tipo: tIPO_INSTRUCCION.GRAFICARTS
+		};
+	},
+
+	nuevoPush(id, expresion, linea, columna){
+		return{
+			tipo: tIPO_INSTRUCCION.MIPUSH,
+			identificador: id,
+			expresion: expresion,
+			linea: linea,
+			columna: columna
+		}
+	},
+
+	nuevoPop(id, linea, columna){
+		return{
+			tipo: tIPO_INSTRUCCION.MIPOP,
+			identificador: id,
+			linea: linea,
+			columna: columna
+		}
 	}
 
  

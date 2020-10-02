@@ -4,7 +4,7 @@ import { TIPO_DATO, TS } from './tabla_simbolos';
 import { TE } from './tabla_errores';
 import { TRANSFERENCIA } from './transferencia';
 
-
+export let graficarTS;
 
 let tsGlobal: TS;
 let Terrores: TE;
@@ -13,6 +13,7 @@ let salidaConsola = "";
 let _ambito;
 
 function _main(AST) {
+  graficarTS = [];
   _ambito = "global";
   console.log(AST);
   Terrores = new TE();
@@ -79,8 +80,14 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
       try { procesarFor(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
     } else if (instruccion[i].tipo === TIPO_INSTRUCCION.SET_VEC) { //setear vector/array
       try { modificarArray(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
-    }else if (instruccion[i].tipo === TIPO_INSTRUCCION.IMPRIMIR_ARRAY) { //setear vector/array
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.IMPRIMIR_ARRAY) { //setear vector/array
       try { printArrayConsole(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.GRAFICARTS) { //setear vector/array
+      try { graficar_ts(tablaDeSimbolos); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.MIPUSH) { //setear vector/array
+      try { procesarPush(instruccion[i], tablaDeSimbolos); } catch (error) { }
+    }else if (instruccion[i].tipo === TIPO_INSTRUCCION.MIPOP) { //setear vector/array
+      try { procesarPop(instruccion[i], tablaDeSimbolos); } catch (error) { }
     }
 
 
@@ -91,39 +98,77 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
 
 }
 
-function printArrayConsole(instruccion, tablaDeSimbolos, miTransferencia){
+function procesarPop(instruccion, tablaDeSimbolos) {
+  const result = tablaDeSimbolos.obtener(instruccion.identificador, 0, 0);
+  const retornar = result.valor.pop();
+  const valor = { valor: result.valor, tipo: result.tipo }
+  tablaDeSimbolos.actualizar(instruccion.identificador, valor, instruccion.linea, instruccion.columna);
+  return { valor: retornar, tipo: result.tipo };
+}
+
+function procesarPush(instruccion, tablaDeSimbolos) {
+  const result = tablaDeSimbolos.obtener(instruccion.identificador, 0, 0);
+  const res = procesarcadena(instruccion.expresion, tablaDeSimbolos);
+  if (res.tipo === result.tipo) {
+    result.valor.push(res.valor);
+    const valor = { valor: result.valor, tipo: result.tipo }
+    tablaDeSimbolos.actualizar(instruccion.identificador, valor, instruccion.linea, instruccion.columna);
+  }else{
+    Terrores.add("semantico", 'se intenta insertar elemnto de tipo ' + res.tipo + ' en el array de tipo ' + result.tipo, instruccion.linea, instruccion.columna);
+  }
+}
+
+function graficar_ts(tablaDeSimbolos) {
+  const x = [];
+  (tablaDeSimbolos.simbolos).forEach(element => {
+    const y = {
+      tipo_declaracion: element.tipo_declaracion,
+      id: element.id,
+      tipo: element.tipo,
+      valor: element.valor,
+      ambito: element.ambito,
+      linea: element.linea,
+      columna: element.columna,
+      parametro: element.parametro
+    }
+    x.push(y);
+  });
+  graficarTS.push(x);
+}
+
+function printArrayConsole(instruccion, tablaDeSimbolos, miTransferencia) {
   const cadena = procesarcadena(instruccion.expresion, tablaDeSimbolos); //cadena entrada
   const miArray = procesarcadena(instruccion.identificador, tablaDeSimbolos);
   salidaConsola += cadena.valor + "  [ ";
   for (let index = 0; index < (miArray.valor).length; index++) {
     const element = (miArray.valor)[index];
-      if(index == (miArray.valor).length-1 ){
-        salidaConsola += element+" ]";
-        break;
-      }
-      salidaConsola += element+", ";
+    if (index == (miArray.valor).length - 1) {
+      salidaConsola += element + " ]";
+      break;
+    }
+    salidaConsola += element + ", ";
   }
 
   salidaConsola += "\n";
- 
+
 }
 
-function modificarArray(instruccion, tablaDeSimbolos, miTransferencia){
-  
+function modificarArray(instruccion, tablaDeSimbolos, miTransferencia) {
+
   const getVec = procesarcadena(instruccion.getVector, tablaDeSimbolos);
   const setVec = tablaDeSimbolos.obtener(instruccion.setVector.identificador, 0, 0);
   const posicion = expAritmetica(instruccion.setVector.expresion, tablaDeSimbolos);
 
-  if(posicion.tipo === TIPO_DATO.NUMERO){
-    if(getVec.tipo === setVec.tipo){
+  if (posicion.tipo === TIPO_DATO.NUMERO) {
+    if (getVec.tipo === setVec.tipo) {
       setVec.valor[posicion.valor] = getVec.valor;
       const new_valor = { valor: setVec.valor, tipo: setVec.tipo }
       tablaDeSimbolos.actualizar(setVec.id, new_valor, instruccion.linea, instruccion.columna);
-    }else{
-      Terrores.add("error semantico", ' el array es de tipo ' + setVec.tipo + ' y el valor a asignar es de tipo '+ getVec.tipo, setVec.linea, setVec.columna);
+    } else {
+      Terrores.add("error semantico", ' el array es de tipo ' + setVec.tipo + ' y el valor a asignar es de tipo ' + getVec.tipo, setVec.linea, setVec.columna);
     }
-  }else{
-    Terrores.add("error semantico", ' solo se acepta NUMERO en las posiciones de arrays, esta intentado usar '+ setVec.tipo, setVec.linea, setVec.columna);
+  } else {
+    Terrores.add("error semantico", ' solo se acepta NUMERO en las posiciones de arrays, esta intentado usar ' + setVec.tipo, setVec.linea, setVec.columna);
   }
 }
 
@@ -213,11 +258,11 @@ function procesarSwitch(instruccion, tablaDeSimbolos, miTransferencia) {
     } else {
       if (evaluar)
         listaInstruccion(lscasos[index].instrucciones, tsSwitch, trans_switch);
-        if (trans_switch.flagReturn || trans_switch.flagBreak) break;
+      if (trans_switch.flagReturn || trans_switch.flagBreak) break;
     }
   }
 
-  if (trans_switch.flagReturn){ 
+  if (trans_switch.flagReturn) {
     miTransferencia.expresion = trans_switch.expresion;
     miTransferencia.flagReturn = trans_switch.flagReturn;
   }
@@ -384,8 +429,8 @@ function procesarArray(instruccion, tablaDeSimbolos) {
     }
   }
 
-    const new_valor = { valor: array, tipo: sym.tipo }
-    tablaDeSimbolos.actualizar(sym.id, new_valor, instruccion.linea, instruccion.columna);
+  const new_valor = { valor: array, tipo: sym.tipo }
+  tablaDeSimbolos.actualizar(sym.id, new_valor, instruccion.linea, instruccion.columna);
 
 }
 
@@ -497,7 +542,7 @@ function expLogica(expresion, tablaDeSimbolos) {
     Terrores.add("semantico", 'se esperaban expresiones booleanas para ejecutar la: ' + expresion.tipo, expresion.linea, expresion.columna);
     return;
   }
-  if (expresion.tipo === TIPO_OPERACION.OR)  {
+  if (expresion.tipo === TIPO_OPERACION.OR) {
     // En este caso necesitamos procesar los operandos para ||.
     const valorIzq = expLogica(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
     const valorDer = expLogica(expresion.operandoDer, tablaDeSimbolos);      // resolvemos el operando derecho.
@@ -526,15 +571,13 @@ function exprRelacional(expresion, tablaDeSimbolos) {
     // En este caso necesitamos procesar los operandos antes de realizar la comparación.
     let valorIzq = expAritmetica(expresion.operandoIzq, tablaDeSimbolos);      // resolvemos el operando izquierdo.
     let valorDer = expAritmetica(expresion.operandoDer, tablaDeSimbolos);      // resolvemos el operando derecho.
-   
+
     if (valorIzq.tipo !== TIPO_DATO.NUMERO || valorDer.tipo !== TIPO_DATO.NUMERO) {
       Terrores.add("semantico", 'se esperaban expresiones numericas para ejecutar la: ' + expresion.tipo, expresion.linea, expresion.columna);
     } else {
       valorIzq = valorIzq.valor;
       valorDer = valorDer.valor;
     }
-
-    console.log(valorIzq +"  <   "+valorDer);
     if (expresion.tipo === TIPO_OPERACION.MAYOR_QUE) return valorIzq > valorDer;
     if (expresion.tipo === TIPO_OPERACION.MENOR_QUE) return valorIzq < valorDer;
     if (expresion.tipo === TIPO_OPERACION.MAYOR_IGUAL) return valorIzq >= valorDer;
@@ -562,26 +605,32 @@ function exprRelacional(expresion, tablaDeSimbolos) {
 
 
 function expAritmetica(expresultion: any, tablaDeSimbolos) {
-  if(expresultion.tipo === TIPO_INSTRUCCION.MILENGTH){
-    console.log(expresultion);
-    expresultion.tipo = TIPO_VALOR.IDENTIFICADOR;
-    const result = expAritmetica(expresultion, tablaDeSimbolos);
-    console.log(result.valor.length);
-    return {valor: 8, tipo: TIPO_DATO.NUMERO }
+  if(expresultion.tipo === TIPO_INSTRUCCION.MIPOP){
+    return procesarPop(expresultion, tablaDeSimbolos);
+  }
+  if (expresultion.tipo === TIPO_OPERACION.MILENGTH) {
+    let new_expresion = {
+      tipo: TIPO_VALOR.IDENTIFICADOR,
+      valor: expresultion.valor,
+      linea: expresultion.linea,
+      columna: expresultion.columna
+    }
+    const result = expAritmetica(new_expresion, tablaDeSimbolos);
+    return { valor: result.valor.length, tipo: TIPO_DATO.NUMERO }
   }
 
-  if(expresultion.tipo === TIPO_INSTRUCCION.ACCESO_VEC){
+  if (expresultion.tipo === TIPO_INSTRUCCION.ACCESO_VEC) {
     //console.log(expresultion);
     const sym = tablaDeSimbolos.obtener(expresultion.identificador, 0, 0);
     const posicion = expAritmetica(expresultion.expresion, tablaDeSimbolos);
     //console.log(posicion);
-    if(posicion.tipo === TIPO_DATO.NUMERO){
-        const result = { valor: sym.valor[posicion.valor], tipo: sym.tipo };
-        return result;
-    }else{
+    if (posicion.tipo === TIPO_DATO.NUMERO) {
+      const result = { valor: sym.valor[posicion.valor], tipo: sym.tipo };
+      return result;
+    } else {
       Terrores.add("semantico", 'se esperaban expresiones numericas para acceder al array: ' + expresultion.identificador, expresultion.linea, expresultion.columna);
     }
-    
+
   }
 
   if (expresultion.tipo === TIPO_INSTRUCCION.TERNARIO) {

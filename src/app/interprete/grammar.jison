@@ -77,7 +77,10 @@ tCase			"case"
 tDefault		"default"
 tWhile			"while"
 tFor			"for"
-tLength			".length"
+tLength			"length"
+tGraficar_ts	"graficar_ts"
+tPop			"pop"
+tPush			"push"
 
 
 %x INITIAL
@@ -134,6 +137,9 @@ tLength			".length"
 <INITIAL>{tFor}				%{ return 'tFor'; %}
 <INITIAL>{tDefault}			%{ return 'tDefault'; %}
 <INITIAL>{tLength}			%{ return 'tLength'; %}
+<INITIAL>{tGraficar_ts}		%{ return 'tGraficar_ts'; %}
+<INITIAL>{tPop}				%{ return 'tPop'; %}
+<INITIAL>{tPush}			%{ return 'tPush'; %}
 
 
 <INITIAL>{booleano}			%{ return 'booleano'; %}
@@ -210,6 +216,9 @@ SENTENCIA
 		| INS_DOWHILE									{ $$ = $1; }
 		| INS_FOR										{ $$ = $1; }
 		| OPERADOR_TERNARIO								{ $$ = $1; }
+		| MIPOP ptcoma									{ $$ = $1; }
+		| MIPUSH										{ $$ = $1; }
+		| tGraficar_ts parA parC ptcoma 				{ $$ = instruccionesAPI.nuevoGraficarTS(); }
 		| ACCESOARRAY igual EXP_LOGICA ptcoma			{ $$ = instruccionesAPI.nuevoValorArray($1, $3, this._$.first_line , this._$.first_column); }
 		| error { //console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); 
 					new SINTACTOCO("este es un error sintactico", yytext, this._$.first_line , this._$.first_column);
@@ -217,7 +226,14 @@ SENTENCIA
 		;
 
 
+MIPUSH
+	: identificador punto tPush parA EXP_LOGICA parC ptcoma
+	{ $$ = instruccionesAPI.nuevoPush($1, $5, this._$.first_line, this._$.first_column); };
 
+
+MIPOP
+	: identificador punto tPop parA parC 
+	{ $$ = instruccionesAPI.nuevoPop($1, this._$.first_line, this._$.first_column); };
 
 INS_FOR
 	: tFor parA DECLARACION_FOR EXP_LOGICA ptcoma MASMAS_MENOSMENOS parC llaveA LSENTENCIA llaveC 
@@ -364,10 +380,11 @@ EXP
 	| identificador				{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR, this._$.first_line, this._$.first_column); }
 	| parA EXP_LOGICA parC 		{ $$ = $2; }	
 	| LLAMADA					{ $$ = $1; }
-	| MASMAS_MENOSMENOS			{ $$ = $1; }	
 	| LENGTHARRAY				{ $$ = $1; }
+	| MASMAS_MENOSMENOS			{ $$ = $1; }	
 	| ASIGARRAY					{ $$ = instruccionesAPI.nuevoAsigVec($1); }
 	| ACCESOARRAY				{ $$ = $1; }
+	| MIPOP						{ $$ = $1; }
 	| error { new SINTACTOCO("este es un error sintactico", yytext, this._$.first_line , this._$.first_column); }
 	;
 /*
@@ -418,5 +435,4 @@ MASMAS_MENOSMENOS
 
 
 LENGTHARRAY
-	: identificador tLength	{ $$ = instruccionesAPI.nuevoLength($1, this._$.first_line, this._$.first_column ); };
-
+	: identificador punto tLength { $$ = instruccionesAPI.nuevoLength($1, this._$.first_line, this._$.first_column ); };

@@ -1,6 +1,7 @@
 export let tablSim = [];
 export let estado_tblsym = [];
 
+
 // Constantes para los tipos de datos.
 const tIPO_DATO = {
     NUMERO: 'NUMERO',
@@ -156,6 +157,7 @@ class TS {
     /** 
      * imprimir tabla de simbolos
     */
+ 
 
     print() {
         this._simbolos.forEach(element => {
@@ -163,7 +165,6 @@ class TS {
             //tablSim.push(element);
         });
     }
-
 
 }
 

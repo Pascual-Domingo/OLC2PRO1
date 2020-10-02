@@ -22,9 +22,45 @@
 <div class="form-row">
     <div class="col p-2">
         <br>
-        <div class="p-2 mb-0 bg-dark text-white">CONSOLA</div>
+        <div class="p-2 mb-0 bg-dark text-white">
+            <button type="button" class="btn btn-secondary" (click)="btnConsola()">CONSOLA</button>
+            <button type="button" class="btn btn-secondary" (click)="btnGraficarTS()">GRAFICAR TS</button>
+        </div>
         <!-- <ngx-codemirror [options]="codeMirror_options" [(ngModel)]="txtConsola" [disabled] = "true"></ngx-codemirror> -->
-        <textarea class="form-control console" id="idConsola" rows="9" [disabled]="true"></textarea>
+        <div *ngIf = flagConsole>
+            <textarea class="form-control console" id="idConsola" rows="9" [disabled]="true"></textarea>
+        </div>
+        <div *ngIf = flagGraficarTS>
+            <table class="table">
+                <div *ngFor="let element of graficarTS; let j = index">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col">No</th>
+                            <th scope="col">tipo</th>
+                            <th scope="col">identificador</th>
+                            <th scope="col">tipo</th>
+                            <th scope="col">valor</th>
+                            <th scope="col">ambito</th>
+                            <th scope="col">linea</th>
+                            <th scope="col">columna</th>
+                            <th scope="col">Grafica No.{{j+1}}</th>
+                        </tr>
+                    </thead>
+                    <tbody *ngFor="let item of element; let i = index">
+                        <tr>
+                            <th scope="row">{{i}}</th>
+                            <td>{{item.tipo_declaracion}}</td>
+                            <td>{{item.id}}</td>
+                            <td>{{item.tipo}}</td>
+                            <td>{{item.valor}}</td>
+                            <td>{{item.ambito}}</td>
+                            <td>{{item.linea}}</td>
+                            <td>{{item.columna}}</td>
+                        </tr>
+                    </tbody>
+                </div>
+            </table>
+        </div>
     </div>
 </div>
 
