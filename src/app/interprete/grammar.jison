@@ -81,6 +81,8 @@ tLength			"length"
 tGraficar_ts	"graficar_ts"
 tPop			"pop"
 tPush			"push"
+tOf				"of"
+tIn				"in"
 
 
 %x INITIAL
@@ -140,6 +142,8 @@ tPush			"push"
 <INITIAL>{tGraficar_ts}		%{ return 'tGraficar_ts'; %}
 <INITIAL>{tPop}				%{ return 'tPop'; %}
 <INITIAL>{tPush}			%{ return 'tPush'; %}
+<INITIAL>{tOf}				%{ return 'tOf'; %}
+<INITIAL>{tIn}				%{ return 'tIn'; %}
 
 
 <INITIAL>{booleano}			%{ return 'booleano'; %}
@@ -215,6 +219,7 @@ SENTENCIA
 		| INS_WHILE										{ $$ = $1; }
 		| INS_DOWHILE									{ $$ = $1; }
 		| INS_FOR										{ $$ = $1; }
+		| FOROF											{ $$ = $1; }
 		| OPERADOR_TERNARIO								{ $$ = $1; }
 		| MIPOP ptcoma									{ $$ = $1; }
 		| MIPUSH										{ $$ = $1; }
@@ -224,6 +229,17 @@ SENTENCIA
 					new SINTACTOCO("este es un error sintactico", yytext, this._$.first_line , this._$.first_column);
 				}
 		;
+
+FOROF
+	: tFor parA tLet identificador tOf identificador parC llaveA LSENTENCIA llaveC
+		{ $$ = instruccionesAPI.nuevoForOf($4, $6, $9, this._$.first_line, this._$.first_column); }
+	| tFor parA tConst identificador tOf identificador parC llaveA LSENTENCIA llaveC
+		{ $$ = instruccionesAPI.nuevoForOf($4, $6, $9, this._$.first_line, this._$.first_column); }
+	| tFor parA tLet identificador tIn identificador parC llaveA LSENTENCIA llaveC
+		{ $$ = instruccionesAPI.nuevoForIN($4, $6, $9, this._$.first_line, this._$.first_column); }
+	| tFor parA tConst identificador tIn identificador parC llaveA LSENTENCIA llaveC
+		{ $$ = instruccionesAPI.nuevoForIN($4, $6, $9, this._$.first_line, this._$.first_column); }
+	;
 
 
 MIPUSH

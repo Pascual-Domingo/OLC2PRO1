@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 import { CodemirrorModule } from '@ctrl/ngx-codemirror';
 import { ReportesComponent } from './reportes/reportes.component';
 import { TblsimbolosComponent } from './tblsimbolos/tblsimbolos.component';
+import { GraphASTComponent } from './graph-ast/graph-ast.component';
 
 @NgModule({
   declarations: [
@@ -18,7 +19,8 @@ import { TblsimbolosComponent } from './tblsimbolos/tblsimbolos.component';
     TraductorComponent,
     GraficarComponent,
     ReportesComponent,
-    TblsimbolosComponent
+    TblsimbolosComponent,
+    GraphASTComponent
   ],
   imports: [
     BrowserModule,

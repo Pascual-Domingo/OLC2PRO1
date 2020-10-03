@@ -86,8 +86,12 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
       try { graficar_ts(tablaDeSimbolos); } catch (error) { }
     } else if (instruccion[i].tipo === TIPO_INSTRUCCION.MIPUSH) { //setear vector/array
       try { procesarPush(instruccion[i], tablaDeSimbolos); } catch (error) { }
-    }else if (instruccion[i].tipo === TIPO_INSTRUCCION.MIPOP) { //setear vector/array
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.MIPOP) { //setear vector/array
       try { procesarPop(instruccion[i], tablaDeSimbolos); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.FOROF) { //setear vector/array
+      try { procesarforOf(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.FORIN) { //setear vector/array
+      try { procesarforIN(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
     }
 
 
@@ -96,6 +100,65 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
 
   }
 
+}
+
+
+function procesarforIN(instruccion, tablaDeSimbolos, miTransferencia) {
+  //console.log(instruccion);
+  const result = tablaDeSimbolos.obtener(instruccion.identificador, 0, 0);
+  //console.log(result);
+  const elemento = (result.valor);
+  for (let index = 0; index < elemento.length; index++) {
+    const element = elemento[index];
+    const trans_forOf = new TRANSFERENCIA(miTransferencia.flagFuncion);
+    trans_forOf.flagCiclo = true;
+    const tsforOF = new TS(copiar(tablaDeSimbolos.simbolos), trans_forOf);
+    tsforOF.agregar(
+      "let",
+      instruccion.id_var,
+      result.tipo,
+      index,
+      "local",
+      instruccion.linea,
+      instruccion.columna,
+      undefined
+    );
+
+    listaInstruccion(instruccion.instruccion, tsforOF, trans_forOf);
+    if (trans_forOf.flagBreak || trans_forOf.flagReturn) {
+      miTransferencia.expresion = trans_forOf.expresion;
+      break;
+    }
+  }
+}
+
+function procesarforOf(instruccion, tablaDeSimbolos, miTransferencia) {
+  //console.log(instruccion);
+  const result = tablaDeSimbolos.obtener(instruccion.identificador, 0, 0);
+  //console.log(result);
+  const elemento = (result.valor);
+  for (let index = 0; index < elemento.length; index++) {
+    const element = elemento[index];
+    const trans_forOf = new TRANSFERENCIA(miTransferencia.flagFuncion);
+    trans_forOf.flagCiclo = true;
+    const tsforOF = new TS(copiar(tablaDeSimbolos.simbolos), trans_forOf);
+    tsforOF.agregar(
+      "let",
+      instruccion.id_var,
+      result.tipo,
+      element,
+      "local",
+      instruccion.linea,
+      instruccion.columna,
+      undefined
+    );
+
+    listaInstruccion(instruccion.instruccion, tsforOF, trans_forOf);
+    if (trans_forOf.flagBreak || trans_forOf.flagReturn) {
+      miTransferencia.expresion = trans_forOf.expresion;
+      break;
+    }
+  }
 }
 
 function procesarPop(instruccion, tablaDeSimbolos) {
@@ -113,7 +176,7 @@ function procesarPush(instruccion, tablaDeSimbolos) {
     result.valor.push(res.valor);
     const valor = { valor: result.valor, tipo: result.tipo }
     tablaDeSimbolos.actualizar(instruccion.identificador, valor, instruccion.linea, instruccion.columna);
-  }else{
+  } else {
     Terrores.add("semantico", 'se intenta insertar elemnto de tipo ' + res.tipo + ' en el array de tipo ' + result.tipo, instruccion.linea, instruccion.columna);
   }
 }
@@ -329,6 +392,7 @@ function procesarElseIf(instruccion, tablaDeSimbolos, miTransferencia) {
 }
 
 function procesarTransferencia(instruccion, tablaDeSimbolos, miTransferencia) {
+  //console.log(instruccion);
   if (instruccion.valor === "break" && (miTransferencia.flagSwitch || miTransferencia.flagCiclo)) {
     miTransferencia.flagBreak = true;
   } else if (instruccion.valor === "return" && instruccion.expresion !== undefined && miTransferencia.flagFuncion) {
@@ -468,6 +532,7 @@ function procesarDeclaracion(instruccion, tablaDeSimbolos) { //aqui cambiamos pa
 }
 
 function procesar_asiganacionDeclarado(instruccion, tablaDeSimbolos) {
+  //console.log(instruccion);
   procesarDeclaracion(instruccion, tablaDeSimbolos);
   procesarAsignacion(instruccion, tablaDeSimbolos);
 }
@@ -605,7 +670,7 @@ function exprRelacional(expresion, tablaDeSimbolos) {
 
 
 function expAritmetica(expresultion: any, tablaDeSimbolos) {
-  if(expresultion.tipo === TIPO_INSTRUCCION.MIPOP){
+  if (expresultion.tipo === TIPO_INSTRUCCION.MIPOP) {
     return procesarPop(expresultion, tablaDeSimbolos);
   }
   if (expresultion.tipo === TIPO_OPERACION.MILENGTH) {

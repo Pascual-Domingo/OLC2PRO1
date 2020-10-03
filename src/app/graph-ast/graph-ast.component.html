@@ -1,0 +1,23 @@
+<div class="container">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <button type="button" class="btn btn-outline-secondary" (click)="btnTraductor()">AST TRADUCTOS</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="btnInterpete()">AST INTERPRETE</button>
+  </nav>
+
+  <div id = "graph">
+
+  </div>
+
+  <div *ngIf=flagAstTraductor>
+    traductor
+  </div>
+
+  <div *ngIf=flagAstInterprete>
+    INTERPRETE
+  </div>
+
+
+</div>
+<!--
+<div id="graph" style="text-align: center;"></div>
+-->

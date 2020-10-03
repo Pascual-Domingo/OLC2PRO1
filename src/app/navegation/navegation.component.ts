@@ -54,7 +54,7 @@ errores = {
   }
 
   btnGraficar() {
-    
+    this.router.navigate(['/graphast']);
   }
 
 }

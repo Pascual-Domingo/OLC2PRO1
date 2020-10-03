@@ -74,6 +74,8 @@ const tIPO_INSTRUCCION = {
 	GRAFICARTS:		'GRAFICARTS',
 	MIPOP:			'MIPOP',
 	MIPUSH:			'MIPUSH',	
+	FOROF:			'FOROF',
+	FORIN:			'FORIN',
 }
 
 // Constantes para los tipos de OPCION_SWITCH validas en la gramática
@@ -206,6 +208,27 @@ const InstruccionesAPI = {
 		}
 	},
 
+	nuevoForOf(id, idArray, instruccion, linea, columna){
+		return {
+			tipo: tIPO_INSTRUCCION.FOROF,
+			id_var: id,
+			identificador: idArray,
+			instruccion: instruccion,
+			linea: linea,
+			columna: columna
+		};
+	},
+
+	nuevoForIN(id, idArray, instruccion, linea, columna){
+		return {
+			tipo: tIPO_INSTRUCCION.FORIN,
+			id_var: id,
+			identificador: idArray,
+			instruccion: instruccion,
+			linea: linea,
+			columna: columna
+		};
+	},
 
 	nuevoVariable(tipo_decla, ids){
 		return {
@@ -496,7 +519,9 @@ const InstruccionesAPI = {
 			linea: linea,
 			columna: columna
 		}
-	}
+	},
+
+	
 
  
 	

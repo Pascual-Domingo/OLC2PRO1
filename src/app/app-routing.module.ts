@@ -4,6 +4,8 @@ import { TraductorComponent } from './traductor/traductor.component';
 import { ReportesComponent } from './reportes/reportes.component';
 import { TblsimbolosComponent } from './tblsimbolos/tblsimbolos.component'
 import { GraficarComponent } from './graficar/graficar.component';
+import { GraphASTComponent } from './graph-ast/graph-ast.component';
+  import { from } from 'rxjs';
 
 const routes: Routes = [
   {
@@ -27,6 +29,10 @@ const routes: Routes = [
   {
     path: 'graficar',
     component: GraficarComponent
+  },
+  {
+    path: 'graphast',
+    component: GraphASTComponent
   }
 
 ];
