@@ -83,6 +83,7 @@ tPop			"pop"
 tPush			"push"
 tOf				"of"
 tIn				"in"
+tType			"type"
 
 
 %x INITIAL
@@ -144,6 +145,7 @@ tIn				"in"
 <INITIAL>{tPush}			%{ return 'tPush'; %}
 <INITIAL>{tOf}				%{ return 'tOf'; %}
 <INITIAL>{tIn}				%{ return 'tIn'; %}
+<INITIAL>{tType}			%{ return 'tType'; %}
 
 
 <INITIAL>{booleano}			%{ return 'booleano'; %}
@@ -223,32 +225,37 @@ SENTENCIA
 		| OPERADOR_TERNARIO								{ $$ = $1; }
 		| MIPOP ptcoma									{ $$ = $1; }
 		| MIPUSH										{ $$ = $1; }
+		| MITYPE ptcoma									{ $$ = $1; }
 		| tGraficar_ts parA parC ptcoma 				{ $$ = instruccionesAPI.nuevoGraficarTS(); }
 		| ACCESOARRAY igual EXP_LOGICA ptcoma			{ $$ = instruccionesAPI.nuevoValorArray($1, $3, this._$.first_line , this._$.first_column); }
-		| error { //console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); 
+		| error {   console.error('Este es un error sintáctico: ' + yytext + ', en la linea: ' + this._$.first_line + ', en la columna: ' + this._$.first_column); 
 					new SINTACTOCO("este es un error sintactico", yytext, this._$.first_line , this._$.first_column);
 				}
 		;
 
+MITYPE
+	: tType PR_IDENTIFICADOR igual llaveA LSTRUCT llaveC 
+	{ $$ = instruccionesAPI.nuevoType($2, $5, this._$.first_line, this._$.first_column); };	
+
 FOROF
-	: tFor parA tLet identificador tOf identificador parC llaveA LSENTENCIA llaveC
+	: tFor parA tLet PR_IDENTIFICADOR tOf PR_IDENTIFICADOR parC llaveA LSENTENCIA llaveC
 		{ $$ = instruccionesAPI.nuevoForOf($4, $6, $9, this._$.first_line, this._$.first_column); }
-	| tFor parA tConst identificador tOf identificador parC llaveA LSENTENCIA llaveC
+	| tFor parA tConst PR_IDENTIFICADOR tOf PR_IDENTIFICADOR parC llaveA LSENTENCIA llaveC
 		{ $$ = instruccionesAPI.nuevoForOf($4, $6, $9, this._$.first_line, this._$.first_column); }
-	| tFor parA tLet identificador tIn identificador parC llaveA LSENTENCIA llaveC
+	| tFor parA tLet PR_IDENTIFICADOR tIn PR_IDENTIFICADOR parC llaveA LSENTENCIA llaveC
 		{ $$ = instruccionesAPI.nuevoForIN($4, $6, $9, this._$.first_line, this._$.first_column); }
-	| tFor parA tConst identificador tIn identificador parC llaveA LSENTENCIA llaveC
+	| tFor parA tConst PR_IDENTIFICADOR tIn PR_IDENTIFICADOR parC llaveA LSENTENCIA llaveC
 		{ $$ = instruccionesAPI.nuevoForIN($4, $6, $9, this._$.first_line, this._$.first_column); }
 	;
 
 
 MIPUSH
-	: identificador punto tPush parA EXP_LOGICA parC ptcoma
+	: PR_IDENTIFICADOR punto tPush parA EXP_LOGICA parC ptcoma
 	{ $$ = instruccionesAPI.nuevoPush($1, $5, this._$.first_line, this._$.first_column); };
 
 
 MIPOP
-	: identificador punto tPop parA parC 
+	: PR_IDENTIFICADOR punto tPop parA parC 
 	{ $$ = instruccionesAPI.nuevoPop($1, this._$.first_line, this._$.first_column); };
 
 INS_FOR
@@ -257,7 +264,7 @@ INS_FOR
 
 DECLARACION_FOR
 	: VARIABLES					{ $$ = $1; }
-	| identificador ptcoma		{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR, this._$.first_line, this._$.first_column); }
+	| PR_IDENTIFICADOR ptcoma		{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR, this._$.first_line, this._$.first_column); }
 	;
 
 INS_WHILE
@@ -303,11 +310,11 @@ IF	: tif parA EXP_LOGICA parC llaveA LSENTENCIA llaveC
 
 
 FUNCION
-	: tFunction identificador parA PARAM_FUN parC _TIPO_DATO llaveA LSENTENCIA llaveC
+	: tFunction PR_IDENTIFICADOR parA PARAM_FUN parC _TIPO_DATO llaveA LSENTENCIA llaveC
 	{ $$ = instruccionesAPI.nuevoFuncion($1, $2, $4, $6, $8, this._$.first_line, this._$.first_column);	};
 
 LLAMADA
-	: identificador parA PARAM_LLAMADA parC 
+	: PR_IDENTIFICADOR parA PARAM_LLAMADA parC 
 	{ $$ = instruccionesAPI.nuevoLlamada($1, $3, this._$.first_line, this._$.first_column); };
 
 PARAM_LLAMADA
@@ -322,7 +329,7 @@ PARAM_FUN
 	;
 
 PARAM 
-	: identificador _TIPO_DATO { $$ = instruccionesAPI.nuevoParametro($1, $2, this._$.first_line, this._$.first_column ); } 
+	: PR_IDENTIFICADOR _TIPO_DATO { $$ = instruccionesAPI.nuevoParametro($1, $2, this._$.first_line, this._$.first_column ); } 
 	;
 
 
@@ -334,11 +341,11 @@ _TIPO_DATO
 
 
 OPERADOR_TERNARIO
-	: tLet identificador igual TERNARIO ptcoma							{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, undefined, $4, this._$.first_line, this._$.first_column)]); }	
-	| tLet identificador dospt TIPO_VARIABLE igual TERNARIO ptcoma		{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, $4, $6, this._$.first_line, this._$.first_column)]); }
-	| tConst identificador igual TERNARIO ptcoma						{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, undefined, $4, this._$.first_line, this._$.first_column)]); }
-	| tConst identificador dospt TIPO_VARIABLE igual TERNARIO ptcoma	{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, $4, $6, this._$.first_line, this._$.first_column)]); }
-	| identificador igual TERNARIO ptcoma								{ $$ = instruccionesAPI.nuevoVariable(undefined, [instruccionesAPI.nuevoAsignacion($1, $3, this._$.first_line, this._$.first_column)]); }
+	: tLet PR_IDENTIFICADOR igual TERNARIO ptcoma							{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, undefined, $4, this._$.first_line, this._$.first_column)]); }	
+	| tLet PR_IDENTIFICADOR dospt TIPO_VARIABLE igual TERNARIO ptcoma		{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, $4, $6, this._$.first_line, this._$.first_column)]); }
+	| tConst PR_IDENTIFICADOR igual TERNARIO ptcoma						{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, undefined, $4, this._$.first_line, this._$.first_column)]); }
+	| tConst PR_IDENTIFICADOR dospt TIPO_VARIABLE igual TERNARIO ptcoma	{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, $4, $6, this._$.first_line, this._$.first_column)]); }
+	| PR_IDENTIFICADOR igual TERNARIO ptcoma								{ $$ = instruccionesAPI.nuevoVariable(undefined, [instruccionesAPI.nuevoAsignacion($1, $3, this._$.first_line, this._$.first_column)]); }
 	| tReturn TERNARIO ptcoma 											{ $$ = instruccionesAPI.nuevoTransferencia($1, $2, this._$.first_line, this._$.first_column); }
 	;
 	
@@ -349,9 +356,9 @@ TERNARIO
 
 VARIABLES
 	: tLet LISTA_ID ptcoma												{ $$ = instruccionesAPI.nuevoVariable($1, $2); }
-	| identificador igual EXP_LOGICA ptcoma 							{ $$ = instruccionesAPI.nuevoVariable(undefined, [instruccionesAPI.nuevoAsignacion($1, $3, this._$.first_line, this._$.first_column)]); }
-	| tConst identificador igual EXP_LOGICA ptcoma 						{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, undefined, $4, this._$.first_line, this._$.first_column)]); }
-	| tConst identificador dospt TIPO_VARIABLE igual EXP_LOGICA ptcoma 	{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, $4, $6, this._$.first_line, this._$.first_column)]); }
+	| PR_IDENTIFICADOR igual EXP_LOGICA ptcoma 							{ $$ = instruccionesAPI.nuevoVariable(undefined, [instruccionesAPI.nuevoAsignacion($1, $3, this._$.first_line, this._$.first_column)]); }
+	| tConst PR_IDENTIFICADOR igual EXP_LOGICA ptcoma 						{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, undefined, $4, this._$.first_line, this._$.first_column)]); }
+	| tConst PR_IDENTIFICADOR dospt TIPO_VARIABLE igual EXP_LOGICA ptcoma 	{ $$ = instruccionesAPI.nuevoVariable($1, [instruccionesAPI.nuevoDeclaracionAsignacion($2, $4, $6, this._$.first_line, this._$.first_column)]); }
 	;
 
 LISTA_ID
@@ -360,10 +367,10 @@ LISTA_ID
 	;
 
 IDENT
-	: identificador											{ $$ = instruccionesAPI.nuevoDeclaracion($1, undefined, this._$.first_line, this._$.first_column); }
-	| identificador dospt TIPO_VARIABLE						{ $$ = instruccionesAPI.nuevoDeclaracion($1, $3, this._$.first_line, this._$.first_column); }
-	| identificador igual EXP_LOGICA						{ $$ = instruccionesAPI.nuevoDeclaracionAsignacion($1, undefined, $3, this._$.first_line, this._$.first_column); }
-	| identificador dospt TIPO_VARIABLE igual EXP_LOGICA	{ $$ = instruccionesAPI.nuevoDeclaracionAsignacion($1, $3, $5, this._$.first_line, this._$.first_column); }
+	: PR_IDENTIFICADOR											{ $$ = instruccionesAPI.nuevoDeclaracion($1, undefined, this._$.first_line, this._$.first_column); }
+	| PR_IDENTIFICADOR dospt TIPO_VARIABLE						{ $$ = instruccionesAPI.nuevoDeclaracion($1, $3, this._$.first_line, this._$.first_column); }
+	| PR_IDENTIFICADOR igual EXP_LOGICA						{ $$ = instruccionesAPI.nuevoDeclaracionAsignacion($1, undefined, $3, this._$.first_line, this._$.first_column); }
+	| PR_IDENTIFICADOR dospt TIPO_VARIABLE igual EXP_LOGICA	{ $$ = instruccionesAPI.nuevoDeclaracionAsignacion($1, $3, $5, this._$.first_line, this._$.first_column); }
 	;
 
 ASIGARRAY : corchA LISEXP corchC	{ $$ = $2; } ;
@@ -375,7 +382,7 @@ LISEXP
 	;
 
 ACCESOARRAY
-	: identificador corchA EXP corchC 
+	: PR_IDENTIFICADOR corchA EXP corchC 
 	{ $$ = instruccionesAPI.nuevoAcceso($1, $3, this._$.first_line , this._$.first_column); }
 	;
 
@@ -393,7 +400,7 @@ EXP
 	| cadena2					{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA, this._$.first_line, this._$.first_column); }
 	| cadena3					{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA, this._$.first_line, this._$.first_column); }
 	| booleano					{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.BOOLEANO, this._$.first_line, this._$.first_column); }
-	| identificador				{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR, this._$.first_line, this._$.first_column); }
+	| PR_IDENTIFICADOR			{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.IDENTIFICADOR, this._$.first_line, this._$.first_column); }
 	| parA EXP_LOGICA parC 		{ $$ = $2; }	
 	| LLAMADA					{ $$ = $1; }
 	| LENGTHARRAY				{ $$ = $1; }
@@ -401,16 +408,9 @@ EXP
 	| ASIGARRAY					{ $$ = instruccionesAPI.nuevoAsigVec($1); }
 	| ACCESOARRAY				{ $$ = $1; }
 	| MIPOP						{ $$ = $1; }
+	| llaveA LSTRUCT llaveC		{ $$ = instruccionesAPI.nuevoAsignaciontype($2, this._$.first_line, this._$.first_column); }
 	| error { new SINTACTOCO("este es un error sintactico", yytext, this._$.first_line , this._$.first_column); }
-	;
-/*
-EXP_CADENA
-	: EXP_CADENA mas EXP_CADENA	{ $$ = instruccionesAPI.nuevoOperacionBinaria($1, $3, TIPO_OPERACION.CONCATENACION); }
-	| cadena1					{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA); }
-	| cadena2					{ $$ = instruccionesAPI.nuevoValor($1, TIPO_VALOR.CADENA); }
-	| EXP						{ $$ = $1; }
-	;
-*/	
+	;	
 
 EXP_RELACIONAL
 	: EXP_RELACIONAL mayque EXP_RELACIONAL			{ $$ = instruccionesAPI.nuevoOperacionBinaria($1, $3, TIPO_OPERACION.MAYOR_QUE, this._$.first_line, this._$.first_column); }
@@ -434,7 +434,7 @@ TIPO_VARIABLE
 	| tNumber		{ $$ = TIPO_DATO.NUMERO; }
 	| tBoolean		{ $$ = TIPO_DATO.BOOLEANO; }
 	| TIPO_VARIABLE corchA corchC	{ $$= $1; }
-	| identificador	{ $$ = $1; }
+	| PR_IDENTIFICADOR	{ $$ = $1[0]; }
 	;
 
 TRANSFERENCIA
@@ -445,10 +445,37 @@ TRANSFERENCIA
 	;
 
 MASMAS_MENOSMENOS
-	: identificador masmas		{ $$ = instruccionesAPI.nuevoMasmas($1, this._$.first_line, this._$.first_column); }
-	| identificador menosmenos	{ $$ = instruccionesAPI.nuevoMenosmenos($1, this._$.first_line, this._$.first_column); }
+	: PR_IDENTIFICADOR masmas		{ $$ = instruccionesAPI.nuevoMasmas($1, this._$.first_line, this._$.first_column); }
+	| PR_IDENTIFICADOR menosmenos	{ $$ = instruccionesAPI.nuevoMenosmenos($1, this._$.first_line, this._$.first_column); }
 	;
 
 
 LENGTHARRAY
-	: identificador punto tLength { $$ = instruccionesAPI.nuevoLength($1, this._$.first_line, this._$.first_column ); };
+	: PR_IDENTIFICADOR punto tLength { $$ = instruccionesAPI.nuevoLength($1, this._$.first_line, this._$.first_column ); };
+
+
+
+LSTRUCT
+	: LSTRUCT coma STRUCT	{ $1.push($3); $$ = $1; }
+	| STRUCT				{ $$ = [$1]; }
+	;
+
+STRUCT
+	: PR_IDENTIFICADOR dospt TIPO_STRUCT
+	{ $$ = instruccionesAPI.nuevoStruct($1, $3, this._$.first_line, this._$.first_column ); };
+
+TIPO_STRUCT
+	: tString		{ $$ = { tipo: TIPO_DATO.STRING, valor: TIPO_DATO.STRING }; }
+	| tNumber		{ $$ = { tipo: TIPO_DATO.NUMERO, valor: TIPO_DATO.NUMERO }; }
+	| tBoolean		{ $$ = { tipo: TIPO_DATO.BOOLEANO, valor: TIPO_DATO.BOOLEANO }; }
+	| EXP_LOGICA	{  	if($1.tipo == "VAL_IDENTIFICADOR"){
+							$1.valor = $1.valor[0];
+							$$ = $1;
+						}
+					}
+	;
+
+PR_IDENTIFICADOR
+	: PR_IDENTIFICADOR punto identificador { $1.push($3); $$ = $1; }
+	| identificador	{ $$ = [$1]; }
+	;

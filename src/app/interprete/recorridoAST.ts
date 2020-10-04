@@ -92,6 +92,8 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
       try { procesarforOf(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
     } else if (instruccion[i].tipo === TIPO_INSTRUCCION.FORIN) { //setear vector/array
       try { procesarforIN(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
+    } else if (instruccion[i].tipo === TIPO_INSTRUCCION.MITYPE) { //setear vector/array
+      try { procesarType(instruccion[i], tablaDeSimbolos, miTransferencia); } catch (error) { }
     }
 
 
@@ -102,10 +104,72 @@ function listaInstruccion(instruccion, tablaDeSimbolos, miTransferencia) {
 
 }
 
+function mistype(identificador, tablaDeSimbolos){
+    for (let index = 0; index < (tablaDeSimbolos.simbolos).length; index++) {
+      const element = (tablaDeSimbolos.simbolos)[index];
+      if(identificador === element.id){
+          return element;
+      }
+    }
+    return 'null';
+}
+
+function saveObj(instruccion, tablaDeSimbolos) {
+  let nodo = [];
+  //console.log(instruccion);
+  (instruccion.expresion).forEach(element => {
+    //console.log(element);
+    let mitipo = element.expresion.valor;
+    let mivalor = element.expresion.valor;
+    let _iden = mistype(element.identificador[0], tablaDeSimbolos);
+    if( _iden !== 'null'){
+      mitipo = _iden.tipo;
+      if(mitipo === TIPO_DATO.NUMERO){
+        mivalor = parseInt(_iden.valor);
+      }else{
+        mivalor = _iden.valor;
+      }
+      
+    }
+   
+    if (element.expresion.tipo == TIPO_VALOR.BOOLEANO || element.expresion.tipo == TIPO_VALOR.NUMERO || element.expresion.tipo == TIPO_VALOR.CADENA) {
+      mitipo = procesarcadena(element.expresion, tablaDeSimbolos).tipo;
+      mivalor = procesarcadena(element.expresion, tablaDeSimbolos).valor;
+
+    }
+    let obj = {
+      identificador: element.identificador[0],
+      tipo: mitipo,
+      valor: mivalor
+    }
+    nodo.push(obj);
+  });
+  return nodo;
+}
+
+function procesarType(instruccion, tablaDeSimbolos, miTransferencia) {
+  //console.log(instruccion);
+  let nodo = saveObj(instruccion, tablaDeSimbolos);
+  //console.log(nodo);
+  /* guardar el bojeto (type) en la tabla de simbolo */
+  tablaDeSimbolos.agregar(
+    "type",
+    instruccion.identificador[0],
+    instruccion.identificador[0],    //tipo varriable
+    nodo,                         // valor de la variable
+    _ambito,
+    instruccion.linea,
+    instruccion.columna,
+    instruccion.parametro
+  );
+
+  // tablaDeSimbolos.print();
+}
 
 function procesarforIN(instruccion, tablaDeSimbolos, miTransferencia) {
   //console.log(instruccion);
-  const result = tablaDeSimbolos.obtener(instruccion.identificador, 0, 0);
+  const result = getIdentificador(instruccion, tablaDeSimbolos);
+  //tablaDeSimbolos.obtener(instruccion.identificador, 0, 0);
   //console.log(result);
   const elemento = (result.valor);
   for (let index = 0; index < elemento.length; index++) {
@@ -134,7 +198,8 @@ function procesarforIN(instruccion, tablaDeSimbolos, miTransferencia) {
 
 function procesarforOf(instruccion, tablaDeSimbolos, miTransferencia) {
   //console.log(instruccion);
-  const result = tablaDeSimbolos.obtener(instruccion.identificador, 0, 0);
+  const result = getIdentificador(instruccion, tablaDeSimbolos);
+  //tablaDeSimbolos.obtener(instruccion.identificador, 0, 0);
   //console.log(result);
   const elemento = (result.valor);
   for (let index = 0; index < elemento.length; index++) {
@@ -162,20 +227,22 @@ function procesarforOf(instruccion, tablaDeSimbolos, miTransferencia) {
 }
 
 function procesarPop(instruccion, tablaDeSimbolos) {
-  const result = tablaDeSimbolos.obtener(instruccion.identificador, 0, 0);
+  const result = getIdentificador(instruccion, tablaDeSimbolos);
+  //tablaDeSimbolos.obtener(instruccion.identificador, 0, 0);
   const retornar = result.valor.pop();
   const valor = { valor: result.valor, tipo: result.tipo }
-  tablaDeSimbolos.actualizar(instruccion.identificador, valor, instruccion.linea, instruccion.columna);
+  tablaDeSimbolos.actualizar(result.id, valor, instruccion.linea, instruccion.columna);
   return { valor: retornar, tipo: result.tipo };
 }
 
 function procesarPush(instruccion, tablaDeSimbolos) {
-  const result = tablaDeSimbolos.obtener(instruccion.identificador, 0, 0);
+  const result = getIdentificador(instruccion, tablaDeSimbolos);
+  //tablaDeSimbolos.obtener(instruccion.identificador, 0, 0);
   const res = procesarcadena(instruccion.expresion, tablaDeSimbolos);
   if (res.tipo === result.tipo) {
     result.valor.push(res.valor);
     const valor = { valor: result.valor, tipo: result.tipo }
-    tablaDeSimbolos.actualizar(instruccion.identificador, valor, instruccion.linea, instruccion.columna);
+    tablaDeSimbolos.actualizar(result.id, valor, instruccion.linea, instruccion.columna);
   } else {
     Terrores.add("semantico", 'se intenta insertar elemnto de tipo ' + res.tipo + ' en el array de tipo ' + result.tipo, instruccion.linea, instruccion.columna);
   }
@@ -219,7 +286,8 @@ function printArrayConsole(instruccion, tablaDeSimbolos, miTransferencia) {
 function modificarArray(instruccion, tablaDeSimbolos, miTransferencia) {
 
   const getVec = procesarcadena(instruccion.getVector, tablaDeSimbolos);
-  const setVec = tablaDeSimbolos.obtener(instruccion.setVector.identificador, 0, 0);
+  const setVec = getIdentificador(instruccion.setVector, tablaDeSimbolos);
+  //tablaDeSimbolos.obtener(instruccion.setVector.identificador, 0, 0);
   const posicion = expAritmetica(instruccion.setVector.expresion, tablaDeSimbolos);
 
   if (posicion.tipo === TIPO_DATO.NUMERO) {
@@ -251,7 +319,9 @@ function procesarFor(instruccion, tablaDeSimbolos, miTransferencia) {
     //valor = procesarcadena(instruccion.variable, tablaDeSimbolos); //aqui quiero que retorne: tipo y valor
     procesarVariables(instruccion.variable, tsFor);
   }
-  const valor = tsFor.obtener(instruccion.aumento.identificador, instruccion.aumento.linea, instruccion.aumento.columna);
+
+  const valor = getIdentificador(instruccion.aumento, tsFor);
+  //tsFor.obtener(instruccion.aumento.identificador, instruccion.aumento.linea, instruccion.aumento.columna);
 
   //const valor = procesarExpresionCadena(instruccion.valorVariable, tablaDeSimbolos); //aqui quiero que retorne: tipo y valor
   //tablaDeSimbolos.actualizar(instruccion.variable, valor);
@@ -413,7 +483,7 @@ function procesarTransferencia(instruccion, tablaDeSimbolos, miTransferencia) {
 
 function procesarfuncion(instruccion, tablaDeSimbolos) {
   _ambito = "local";
-  const mifuncion = tablaDeSimbolos.obtener(instruccion.identificador, instruccion.linea, instruccion.columna);
+  const mifuncion = getIdentificador(instruccion, tablaDeSimbolos);
   const tsFun = new TS(copiar(tsGlobal.simbolos), Terrores);
   const transferenciaFuncion = new TRANSFERENCIA(true);
   let flag: boolean = false;
@@ -446,6 +516,7 @@ function procesarfuncion(instruccion, tablaDeSimbolos) {
 
 
 function procesarParametro(parametro, llamada, tablaDeSimbolos, simboloanterior) {
+
   for (let i = 0; i < parametro.length; i++) {
     /* crea objeto tipo variable */
     const result = instruccionesAPI.nuevoDeclaracionAsignacion(
@@ -455,17 +526,31 @@ function procesarParametro(parametro, llamada, tablaDeSimbolos, simboloanterior)
       parametro[i].linea,
       parametro[i].columna
     );
+
     result.tipo_declaracion = "let";
     procesarDeclaracion(result, tablaDeSimbolos)
     const valor = procesarcadena(result.expresion, simboloanterior); //aqui quiero que retorne: tipo y valor
-    tablaDeSimbolos.actualizar(result.identificador, valor, result.linea, result.columna);
+
+    if (valor.tipo == "null") {
+      valor.tipo = parametro[i].tipo;
+    }
+    tablaDeSimbolos.actualizar(result.identificador[0], valor, result.linea, result.columna);
+    /*
+    if(result.identificador.length == 1){ //si solo es una variable
+      tablaDeSimbolos.actualizar(result.identificador[0], valor, result.linea, result.columna);
+    }else{//si es variable.variable
+
+    }*/
+
     //procesar_asiganacionDeclarado(result, tablaDeSimbolos)
   }
 
 }
 
+
 function masMas(instruccion, tablaDeSimbolos) {
-  const sym = tablaDeSimbolos.obtener(instruccion.identificador, instruccion.linea, instruccion.columna);
+  const sym = getIdentificador(instruccion, tablaDeSimbolos);
+  //console.log(sym);
   const valor = { valor: sym.valor + 1, tipo: sym.tipo }
   tablaDeSimbolos.actualizar(sym.id, valor, sym.linea, sym.columna);
   valor.valor = valor.valor - 1;
@@ -476,7 +561,8 @@ function procesarArray(instruccion, tablaDeSimbolos) {
   let array: any[] = [];
   //console.log(instruccion);
   const elementos = instruccion.expresion.expresion;
-  const sym = tablaDeSimbolos.obtener(instruccion.identificador, instruccion.linea, instruccion.columna);
+  const sym = getIdentificador(instruccion, tablaDeSimbolos);
+  //tablaDeSimbolos.obtener(instruccion.identificador, instruccion.linea, instruccion.columna);
   //console.log(sym);
   if (elementos === undefined) {
     const new_valor = { valor: array, tipo: sym.tipo }
@@ -499,7 +585,7 @@ function procesarArray(instruccion, tablaDeSimbolos) {
 }
 
 function menosMenos(instruccion, tablaDeSimbolos) {
-  const sym = tablaDeSimbolos.obtener(instruccion.identificador, instruccion.linea, instruccion.columna);
+  const sym = getIdentificador(instruccion, tablaDeSimbolos);
   const valor = { valor: sym.valor - 1, tipo: sym.tipo }
   tablaDeSimbolos.actualizar(sym.id, valor, sym.linea, sym.columna);
   valor.valor = valor.valor + 1;
@@ -510,16 +596,42 @@ function procesarAsignacion(instruccion, tablaDeSimbolos) {
   if (instruccion.expresion.tipo === TIPO_INSTRUCCION.ASIGNACON_VEC || instruccion.expresion === undefined) {
     procesarArray(instruccion, tablaDeSimbolos);
   } else {
+    //console.log(instruccion);
     const valor = procesarcadena(instruccion.expresion, tablaDeSimbolos); //aqui quiero que retorne: tipo y valor
-    tablaDeSimbolos.actualizar(instruccion.identificador, valor, instruccion.linea, instruccion.columna);
+    if (instruccion.expresion.tipo === TIPO_INSTRUCCION.STRUCT) {
+      let val = getIdentificador(instruccion, tablaDeSimbolos);
+      valor.tipo = val.tipo;
+    }
+
+    if (instruccion.identificador.length == 1) {
+      //console.log(instruccion);
+      tablaDeSimbolos.actualizar(instruccion.identificador[0], valor, instruccion.linea, instruccion.columna);
+    } else {
+      let sym = tablaDeSimbolos.obtener(instruccion.identificador[0], 0, 0);
+      //console.log(instruccion);
+      let result = getElemetObj(instruccion.identificador, sym.valor, tablaDeSimbolos, 1);
+      //console.log(result);
+      //console.log(valor);
+      if (result.tipo === valor.tipo) {
+        result.valor = valor.valor;
+      } else if (result.tipo == "null") {
+        result.valor = valor.valor;
+        result.tipo = valor.tipo;
+      } else {
+        Terrores.add("semantico", 'se esperaban expresiones de tipo ' + result.tipo, instruccion.linea, instruccion.columna);
+      }
+
+    }
+
   }
+  //tablaDeSimbolos.print();
 }
 
 function procesarDeclaracion(instruccion, tablaDeSimbolos) { //aqui cambiamos para que acepte el tipo_dato de la declaracion
   //console.log(instruccion);
   tablaDeSimbolos.agregar(
     instruccion.tipo_declaracion,
-    instruccion.identificador,
+    instruccion.identificador[0],
     instruccion.tipo_variable,
     instruccion.valor,
     _ambito,
@@ -670,6 +782,12 @@ function exprRelacional(expresion, tablaDeSimbolos) {
 
 
 function expAritmetica(expresultion: any, tablaDeSimbolos) {
+
+  if (expresultion.tipo === TIPO_INSTRUCCION.STRUCT) {
+    //console.log(expresultion);
+    let _valor = saveObj(expresultion, tablaDeSimbolos);
+    return { tipo: undefined, valor: _valor }
+  }
   if (expresultion.tipo === TIPO_INSTRUCCION.MIPOP) {
     return procesarPop(expresultion, tablaDeSimbolos);
   }
@@ -686,7 +804,8 @@ function expAritmetica(expresultion: any, tablaDeSimbolos) {
 
   if (expresultion.tipo === TIPO_INSTRUCCION.ACCESO_VEC) {
     //console.log(expresultion);
-    const sym = tablaDeSimbolos.obtener(expresultion.identificador, 0, 0);
+    const sym = getIdentificador(expresultion, tablaDeSimbolos);
+    //tablaDeSimbolos.obtener(expresultion.identificador, 0, 0);
     const posicion = expAritmetica(expresultion.expresion, tablaDeSimbolos);
     //console.log(posicion);
     if (posicion.tipo === TIPO_DATO.NUMERO) {
@@ -780,9 +899,15 @@ function expAritmetica(expresultion: any, tablaDeSimbolos) {
       // En este caso únicamente retornamos el valor obtenido por el parser directamente.
       return { valor: expresultion.valor, tipo: TIPO_DATO.NUMERO }
     } else if (expresultion.tipo === TIPO_VALOR.IDENTIFICADOR) {
-      // Es un identificador.
+      if (expresultion.valor[0] === "null") {
+        return { valor: "null", tipo: TIPO_DATO.STRING };
+      }
       // Obtenemos el valor de la tabla de simbolos
-      const sym = tablaDeSimbolos.obtener(expresultion.valor, expresultion.linea, expresultion.columna);
+      let sym = tablaDeSimbolos.obtener(expresultion.valor[0], expresultion.linea, expresultion.columna);
+      if (expresultion.valor.length > 1) {//obtener valor de objetos
+        sym = getElemetObj(expresultion.valor, sym.valor, tablaDeSimbolos, 1);//2 pos ids
+        
+      }
       if (sym.tipo === TIPO_DATO.BOOLEANO) {
         if (sym.valor === "true") {
           return true;//{ valor: true, tipo: TIPO_DATO.BOOLEANO }
@@ -803,6 +928,45 @@ function expAritmetica(expresultion: any, tablaDeSimbolos) {
     }
 }
 
+function getElemetObj(ids, instruccion, tablaDeSimbolos, cont) {
+  //console.log(ids);
+  //console.log(instruccion);
+  let element;
+  for (let index = 0; index < instruccion.length; index++) {
+    element = instruccion[index];
+    
+    if(element.identificador == ids[cont]){
+      //console.log('length id: '+ids.length+'  cont: '+ (cont+1) );
+      if(cont+1 == ids.length){
+        //console.log(element.identificador );
+        return element;
+      }
+      break;
+    }
+    
+  }
+  return getElemetObj(ids, element.valor, tablaDeSimbolos, cont+1 );
+  /*
+  if (instruccion.length == cont) {
+    console.log("entro uraa");
+    return instruccion[0];
+  }
+  */
+
+}
+
+function getIdentificador(instruccion, tablaDeSimbolos) {
+  const tamId = instruccion.identificador.length;
+  let sym;
+  if (tamId == 1) {
+    sym = tablaDeSimbolos.obtener(instruccion.identificador[0], instruccion.linea, instruccion.columna);
+  }
+
+  return sym;
+}
+
+
+
 function copiar(simbolos) {
   let copia = [];
   simbolos.forEach(element => {
@@ -811,5 +975,6 @@ function copiar(simbolos) {
 
   return copia;
 }
+
 
 export const ejecutar = _main;

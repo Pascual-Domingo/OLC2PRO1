@@ -76,6 +76,8 @@ const tIPO_INSTRUCCION = {
 	MIPUSH:			'MIPUSH',	
 	FOROF:			'FOROF',
 	FORIN:			'FORIN',
+	STRUCT:			'STRUCT',
+	MITYPE:			'MITYPE',
 }
 
 // Constantes para los tipos de OPCION_SWITCH validas en la gramática
@@ -516,6 +518,34 @@ const InstruccionesAPI = {
 		return{
 			tipo: tIPO_INSTRUCCION.MIPOP,
 			identificador: id,
+			linea: linea,
+			columna: columna
+		}
+	},
+
+	nuevoStruct(id, expresion, linea, columna){
+		return {
+			tipo: tIPO_INSTRUCCION.STRUCT,
+			identificador: id,
+			expresion: expresion,
+			linea: linea,
+			columna: columna
+		}
+	},
+	 nuevoType(id, expresion, linea, columna){
+		return {
+			tipo: tIPO_INSTRUCCION.MITYPE,
+			identificador: id,
+			expresion: expresion,
+			linea: linea,
+			columna: columna
+		}
+	 },
+
+	 nuevoAsignaciontype(expresion, linea, columna){
+		return {
+			tipo: tIPO_INSTRUCCION.STRUCT,
+			expresion: expresion,
 			linea: linea,
 			columna: columna
 		}
