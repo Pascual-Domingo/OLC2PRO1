@@ -17,6 +17,7 @@ export class GraphASTComponent implements OnInit {
 
   ngOnInit(): void {
     d3.graphviz("#graph")
+    .graphviz()
     .renderDot('digraph {a -> b}');
   }
 
