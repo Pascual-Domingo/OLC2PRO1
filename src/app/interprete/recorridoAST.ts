@@ -5,6 +5,7 @@ import { TE } from './tabla_errores';
 import { TRANSFERENCIA } from './transferencia';
 
 export let graficarTS;
+export let exportAST;
 
 let tsGlobal: TS;
 let Terrores: TE;
@@ -13,6 +14,7 @@ let salidaConsola = "";
 let _ambito;
 
 function _main(AST) {
+  exportAST = AST;
   graficarTS = [];
   _ambito = "global";
   console.log(AST);
